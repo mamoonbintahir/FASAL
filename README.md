@@ -170,6 +170,15 @@ Run against a backend:
 - `test/widget/screens_render_test.dart`: opens every screen in English and Urdu at
   320×640 and 412×915; any overflow or exception fails the test.
 
+### Latest results (CI on Flutter 3.50.0 stable)
+
+- `flutter analyze` — **no issues**
+- `flutter test` — **28 tests, all passing** (unit + widget + render tests in EN/UR at two screen sizes)
+- `flutter build apk --debug` — **builds**; APK attached to each CI run as `fasal-debug-apk`
+- Screenshots of 22 screens are rendered on every push to `main` and published to the
+  [`ci-screenshots`](https://github.com/mamoonbintahir/FASAL/tree/ci-screenshots) branch
+  (emoji appear monochrome there; phones show the colour system emoji).
+
 ## User flow
 
 See [`docs/user-flow.md`](docs/user-flow.md) for the full Mermaid flowchart, including
