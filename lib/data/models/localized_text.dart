@@ -10,7 +10,19 @@ class LocalizedText {
 
   /// Joins several texts into sentences (used for voice: title + body).
   static LocalizedText joinAll(List<LocalizedText> parts) =>
-      LocalizedText(parts.map((p) => p.en).join('. '), parts.map((p) => p.ur).join('۔ '));
+      LocalizedText(_join(parts.map((p) => p.en), '.'), _join(parts.map((p) => p.ur), '۔'));
+
+  static String _join(Iterable<String> parts, String stop) {
+    final buf = StringBuffer();
+    for (final raw in parts) {
+      final p = raw.trim();
+      if (p.isEmpty) continue;
+      if (buf.isNotEmpty) buf.write(' ');
+      buf.write(p);
+      if (!RegExp(r'[.!?۔؟]$').hasMatch(p)) buf.write(stop);
+    }
+    return buf.toString();
+  }
 
   Map<String, dynamic> toJson() => {'en': en, 'ur': ur};
 

@@ -38,7 +38,13 @@ class IrrigationAdvisor {
       );
     }
     final next = tasks
-        .where((t) => t.cropId == crop.id && t.type == TaskType.irrigation && !t.isDone)
+        .where(
+          (t) =>
+              t.cropId == crop.id &&
+              t.type == TaskType.irrigation &&
+              !t.isDone &&
+              AppDates.daysBetween(today, t.dueDate) >= -3, // ignore long-missed tasks
+        )
         .fold<FarmTask?>(null, (best, t) => best == null || t.dueDate.isBefore(best.dueDate) ? t : best);
     final rain = weather?.nextRain(withinDays: 4, threshold: 60);
 

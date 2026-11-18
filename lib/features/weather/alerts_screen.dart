@@ -69,7 +69,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
                 value: alerts,
                 onRetry: () => ref.invalidate(alertsProvider),
                 data: (list) {
-                  final shown = list.where((a) => _tab == 0 ? a.isActive(now) : !a.isActive(now)).toList();
+                  final shown = list.where((a) => _tab == 0 ? a.isActive(now) : !a.isActive(now)).toList()
+                    ..sort((a, b) => _tab == 0 ? a.date.compareTo(b.date) : b.date.compareTo(a.date));
                   if (shown.isEmpty) {
                     return PageBody(
                       children: [EmptyState(emoji: '🌤️', title: s.noAlerts, body: s.noAlertsBody)],

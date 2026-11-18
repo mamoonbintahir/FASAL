@@ -102,7 +102,15 @@ class CropDetailsScreen extends ConsumerWidget {
                         const Gap(6),
                         Text(stageText.of(lang), style: t.bodyLarge),
                         if (doNow.isNotEmpty) const Divider(height: 24),
-                        for (final task in doNow) TaskTile(task: task, showDate: true),
+                        for (final task in doNow.take(4)) TaskTile(task: task, showDate: true),
+                        if (doNow.length > 4)
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: TextButton(
+                              onPressed: () => context.toCalendar(cropId),
+                              child: Text('${s.seeAll} (${doNow.length})'),
+                            ),
+                          ),
                         if (doNow.isEmpty) ...[const Gap(8), Text('✅ ${s.noTasksToday}', style: t.bodyMedium)],
                       ],
                     ),

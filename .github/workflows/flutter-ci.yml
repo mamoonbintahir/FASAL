@@ -64,11 +64,11 @@ jobs:
           cache: true
       - run: flutter pub get
       - name: Download emoji font
-        run: curl -sSL -o /tmp/NotoColorEmoji.ttf https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/NotoColorEmoji.ttf
+        run: curl -sSL -o /tmp/NotoEmoji.ttf 'https://raw.githubusercontent.com/google/fonts/main/ofl/notoemoji/NotoEmoji%5Bwght%5D.ttf'
       - name: Render screenshots
         env:
           FASAL_SCREENSHOTS: '1'
-          EMOJI_FONT: /tmp/NotoColorEmoji.ttf
+          EMOJI_FONT: /tmp/NotoEmoji.ttf
         run: flutter test --update-goldens test/screenshots
       - name: Publish to ci-screenshots branch
         run: |
