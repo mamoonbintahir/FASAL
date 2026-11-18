@@ -1,0 +1,55 @@
+name: fasal
+description: "FASAL — Helping farmers know what to do and when. Agricultural guidance app for Pakistani farmers."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Material Design widgets (moved out of the Flutter SDK in 3.47;
+  # replaces package:flutter/material.dart). Includes localizations.
+  material_ui: ^1.11.0
+
+  # State management
+  flutter_riverpod: ^3.5.0
+  # Navigation
+  go_router: ^18.1.0
+  # Future backend API client (not used for live calls in Phase 1)
+  dio: ^5.11.0
+  # Local + secure storage
+  shared_preferences: ^2.5.6
+  flutter_secure_storage: ^11.2.0
+  # Voice guidance (text-to-speech)
+  flutter_tts: ^4.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-ExtraBold.ttf
+          weight: 800
+    - family: NotoNastaliqUrdu
+      fonts:
+        - asset: assets/fonts/NotoNastaliqUrdu-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoNastaliqUrdu-Bold.ttf
+          weight: 700
