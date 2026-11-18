@@ -5,30 +5,37 @@
 import '../../core/config/env.dart';
 import '../../core/network/app_exception.dart';
 import '../../core/storage/local_store.dart';
-import '../models/app_notification.dart';
-import '../models/crop.dart';
-import '../models/crop_definition.dart';
-import '../models/farm_record.dart';
-import '../models/farm_task.dart';
-import '../models/guidance.dart';
-import '../models/localized_text.dart';
-import '../models/user_profile.dart';
-import '../models/weather.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../repositories/repositories.dart';
-import 'crop_catalog.dart';
-import 'engine/advisors.dart';
-import 'engine/task_scheduler.dart';
-import 'guidance_data.dart';
+
+import 'package:fasal_core/catalog.dart';
+import 'package:fasal_core/engine.dart';
+
 import 'mock_weather_data.dart';
 
 Future<void> _latency() => Future<void>.delayed(Env.mockLatency);
 
+/// Offline mode has no accounts: the farmer uses the app as a local guest.
 class MockAuthRepository implements AuthRepository {
   @override
-  Future<bool> isSignedIn() async => false;
+  bool get requiresSignIn => false;
+
+  @override
+  Future<bool> isSignedIn() async => true;
+
+  @override
+  Future<OtpRequestResult> requestOtp(String phone) async => OtpRequestResult(phone: phone, devCode: '123456');
+
+  @override
+  Future<AuthSession> verifyOtp(String phone, String code) async => AuthSession(userId: 'local', phone: phone);
 
   @override
   Future<void> signOut() async {}
+
+  @override
+  Future<void> deleteAccount() async {}
 }
 
 class MockProfileRepository implements ProfileRepository {
@@ -101,11 +108,13 @@ class MockCropRepository implements CropRepository {
 }
 
 class MockTaskRepository implements TaskRepository {
-  MockTaskRepository(this._store, this._catalog, {this.scheduler = const TaskScheduler()});
+  MockTaskRepository(this._store, this._catalog, this._records, {this.scheduler = const TaskScheduler()});
   final LocalStore _store;
   final CropCatalogRepository _catalog;
+  final RecordsRepository _records;
   final TaskScheduler scheduler;
   static const _key = 'task_states';
+  int _seq = 0;
 
   Map<String, TaskUserState> _states() {
     final raw = _store.readMap(_key) ?? const {};
@@ -132,19 +141,47 @@ class MockTaskRepository implements TaskRepository {
   }
 
   @override
-  Future<void> setCompleted(String taskId, DateTime? completedAt) async {
+  Future<FarmTask> setCompleted(FarmTask task, bool done) async {
     final s = _states();
-    final current = s[taskId] ?? const TaskUserState();
-    s[taskId] = completedAt == null
-        ? current.copyWith(clearCompleted: true)
-        : current.copyWith(completedAt: completedAt);
+    final current = s[task.id] ?? TaskUserState(reminder: task.reminder);
+    if (done) {
+      final now = DateTime.now();
+      s[task.id] = current.copyWith(completedAt: now);
+      await _save(s);
+      await _records.addActivity(
+        ActivityRecord(
+          id: 'act_${now.microsecondsSinceEpoch}_${_seq++}',
+          cropId: task.cropId,
+          type: activityTypeForTask(task.type),
+          date: now,
+          sourceTaskId: task.id,
+          title: task.title,
+        ),
+      );
+      return task.copyWith(completedAt: now);
+    }
+    s[task.id] = current.copyWith(clearCompleted: true);
     await _save(s);
+    await _records.deleteActivityForTask(task.id);
+    return task.copyWith(clearCompleted: true);
   }
 
   @override
-  Future<void> setReminder(String taskId, ReminderOption reminder) async {
+  Future<FarmTask> setReminder(FarmTask task, ReminderOption reminder) async {
     final s = _states();
-    s[taskId] = (s[taskId] ?? const TaskUserState()).copyWith(reminder: reminder);
+    s[task.id] = (s[task.id] ?? TaskUserState(completedAt: task.completedAt)).copyWith(reminder: reminder);
+    await _save(s);
+    return task.copyWith(reminder: reminder);
+  }
+
+  @override
+  Future<void> onCropAdded(Crop crop) async {
+    final def = _catalog.byId(crop.cropTypeId);
+    if (def == null) return;
+    final s = _states();
+    for (final e in scheduler.tasksDoneBeforeAdding(crop, def).entries) {
+      s[e.key] = TaskUserState(completedAt: e.value);
+    }
     await _save(s);
   }
 
@@ -154,6 +191,17 @@ class MockTaskRepository implements TaskRepository {
     await _save(s);
   }
 }
+
+/// Activity type logged when a task of this type is completed.
+ActivityType activityTypeForTask(TaskType t) => switch (t) {
+  TaskType.sowing => ActivityType.sowing,
+  TaskType.irrigation => ActivityType.irrigation,
+  TaskType.fertilizer => ActivityType.fertilizer,
+  TaskType.weeding => ActivityType.weeding,
+  TaskType.inspection || TaskType.pestMonitoring => ActivityType.inspection,
+  TaskType.harvest => ActivityType.harvest,
+  TaskType.seedPrep || TaskType.harvestPrep => ActivityType.other,
+};
 
 class MockWeatherRepository implements WeatherRepository {
   MockWeatherRepository(this._store, {required this.simulateFailure});

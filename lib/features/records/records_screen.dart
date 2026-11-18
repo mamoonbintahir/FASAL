@@ -9,7 +9,9 @@ import '../../core/utils/validators.dart';
 import '../../core/widgets/basics.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/feedback.dart';
-import '../../data/models/farm_record.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../../providers/core_providers.dart';
 import '../../providers/farm_providers.dart';
 

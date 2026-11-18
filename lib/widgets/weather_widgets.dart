@@ -3,9 +3,10 @@ import 'package:material_ui/material_ui.dart';
 import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
-import '../core/utils/date_utils.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../core/widgets/basics.dart';
-import '../data/models/weather.dart';
 
 /// Horizontal 7-day strip ("This week" on the dashboard). Rainy days are highlighted.
 class ForecastStrip extends StatelessWidget {

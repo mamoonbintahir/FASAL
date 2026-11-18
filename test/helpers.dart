@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:fasal/app.dart';
-import 'package:fasal/data/models/crop.dart';
-import 'package:fasal/data/models/user_profile.dart';
+import 'package:fasal_core/models.dart';
 import 'package:fasal/providers/core_providers.dart';
 import 'package:fasal/providers/settings_provider.dart';
 import 'package:fasal/providers/tts_provider.dart';

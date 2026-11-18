@@ -1,5 +1,4 @@
-import '../models/localized_text.dart';
-import '../models/weather.dart';
+import 'package:fasal_core/models.dart';
 
 /// Realistic SAMPLE weather for a Punjab winter week, generated relative to
 /// today so the demo always looks current. Day +3 brings heavy rain.

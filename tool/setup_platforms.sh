@@ -23,8 +23,21 @@ if [ -f "$MANIFEST" ]; then
       sed -i.bak 's#</manifest>#    <queries>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE" />\n        </intent>\n    </queries>\n</manifest>#' "$MANIFEST"
     fi
   fi
+  # 3) Internet access for the FASAL server (debug builds get it from the template).
+  if ! grep -q "android.permission.INTERNET" "$MANIFEST"; then
+    sed -i.bak 's#<manifest xmlns:android="http://schemas.android.com/apk/res/android">#&\n    <uses-permission android:name="android.permission.INTERNET" />#' "$MANIFEST"
+  fi
   rm -f "$MANIFEST.bak"
-  echo "✔ AndroidManifest patched (label + TTS query)"
+  echo "✔ AndroidManifest patched (label, TTS query, internet)"
+fi
+
+# Debug builds only: allow plain HTTP so the emulator can reach a local server
+# (http://10.0.2.2:8080). Release builds stay HTTPS-only.
+DEBUG_MANIFEST=android/app/src/debug/AndroidManifest.xml
+if [ -f "$DEBUG_MANIFEST" ] && ! grep -q "usesCleartextTraffic" "$DEBUG_MANIFEST"; then
+  sed -i.bak 's#</manifest>#    <application android:usesCleartextTraffic="true" />\n</manifest>#' "$DEBUG_MANIFEST"
+  rm -f "$DEBUG_MANIFEST.bak"
+  echo "✔ Debug manifest allows local HTTP"
 fi
 
 # `flutter create` adds a counter-app sample test if none exists — remove it.

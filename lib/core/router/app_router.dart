@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/advice/advice_screen.dart';
+import '../../features/auth/login_screen.dart';
 import '../../features/ask/ask_fasal_screen.dart';
 import '../../features/calendar/crop_calendar_screen.dart';
 import '../../features/calendar/tasks_screen.dart';
@@ -76,6 +77,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/splash', builder: (c, s) => const SplashScreen()),
       GoRoute(path: '/language', builder: (c, s) => const LanguageScreen()),
       GoRoute(path: '/onboarding', builder: (c, s) => const OnboardingScreen()),
+      GoRoute(path: '/login', builder: (c, s) => const LoginScreen()),
+      GoRoute(
+        path: '/login/otp',
+        builder: (c, s) {
+          final extra = s.extra;
+          if (extra is (String, String?)) return OtpScreen(phone: extra.$1, devCode: extra.$2);
+          return const LoginScreen();
+        },
+      ),
       GoRoute(path: '/setup', builder: (c, s) => const ProfileScreen(isSetup: true)),
       GoRoute(path: '/setup/crop', builder: (c, s) => const CropFormScreen.setup()),
       StatefulShellRoute.indexedStack(

@@ -1,62 +1,115 @@
-// Phase 2 API implementations (skeletons).
-//
-// These show the integration pattern against the planned Node.js/Express +
-// MongoDB REST API. They are NOT active in Phase 1 — enable with
-// `--dart-define=USE_MOCK_DATA=false --dart-define=API_BASE_URL=https://...`
-// once the endpoints exist. Repositories not listed here fall back to mocks.
-//
-// Planned endpoints (see README "Backend contract"):
-//   GET    /crops                 -> [CropDto]
-//   POST   /crops                 -> CropDto
-//   PUT    /crops/:id             -> CropDto
-//   DELETE /crops/:id
-//   GET    /weather?district=...  -> WeatherDto (server calls the weather provider;
-//                                   the API key never reaches the app)
-//   GET    /weather/alerts?district=...
+// API implementations of every repository, talking to the FASAL Dart server
+// (`server/`). Wire format = the `toJson`/`fromJson` of the shared
+// `fasal_core` models, so the app and server cannot drift apart.
+
+import 'package:fasal_core/models.dart';
 
 import '../../core/network/api_client.dart';
 import '../../core/network/app_exception.dart';
-import '../models/crop.dart';
-import '../models/weather.dart';
+import '../../core/storage/secure_storage.dart';
 import '../repositories/repositories.dart';
+
+List<Map<String, dynamic>> _list(Object? data) =>
+    data is List ? data.whereType<Map<String, dynamic>>().toList() : throw const ServerException('Unexpected response');
+
+Map<String, dynamic> _map(Object? data) =>
+    data is Map<String, dynamic> ? data : throw const ServerException('Unexpected response');
+
+class ApiAuthRepository implements AuthRepository {
+  ApiAuthRepository(this._api, this._secure);
+  final ApiClient _api;
+  final SecureStorage _secure;
+
+  @override
+  bool get requiresSignIn => true;
+
+  @override
+  Future<bool> isSignedIn() async => (await _secure.readToken()) != null;
+
+  @override
+  Future<OtpRequestResult> requestOtp(String phone) async {
+    final d = _map(await _api.post('/v1/auth/otp/request', body: {'phone': phone}));
+    return OtpRequestResult(phone: d['phone'] as String, devCode: d['devCode'] as String?);
+  }
+
+  @override
+  Future<AuthSession> verifyOtp(String phone, String code) async {
+    final d = _map(await _api.post('/v1/auth/otp/verify', body: {'phone': phone, 'code': code}));
+    await _secure.writeToken(d['token'] as String);
+    final user = _map(d['user']);
+    final profile = d['profile'];
+    return AuthSession(
+      userId: user['id'] as String,
+      phone: user['phone'] as String,
+      profile: profile is Map<String, dynamic> ? UserProfile.fromJson(profile) : null,
+    );
+  }
+
+  @override
+  Future<void> signOut() => _secure.clear();
+
+  @override
+  Future<void> deleteAccount() async {
+    await _api.delete('/v1/me');
+    await _secure.clear();
+  }
+}
+
+class ApiProfileRepository implements ProfileRepository {
+  ApiProfileRepository(this._api);
+  final ApiClient _api;
+
+  @override
+  Future<UserProfile?> getProfile() async {
+    final p = _map(await _api.get('/v1/me'))['profile'];
+    return p is Map<String, dynamic> ? UserProfile.fromJson(p) : null;
+  }
+
+  @override
+  Future<void> saveProfile(UserProfile profile) => _api.put('/v1/me/profile', body: profile.toJson());
+
+  @override
+  Future<void> clear() async {}
+}
 
 class ApiCropRepository implements CropRepository {
   ApiCropRepository(this._api);
   final ApiClient _api;
 
   @override
-  Future<List<Crop>> getCrops() async {
-    final data = await _api.get('/crops');
-    if (data is! List) throw const ServerException('Unexpected response');
-    return data.whereType<Map<String, dynamic>>().map(CropDto.fromJson).map((d) => d.toModel()).toList();
-  }
+  Future<List<Crop>> getCrops() async => _list(await _api.get('/v1/crops')).map(Crop.fromJson).toList();
 
   @override
-  Future<Crop> addCrop(Crop crop) async {
-    final data = await _api.post('/crops', body: CropDto.fromModel(crop).toJson());
-    return CropDto.fromJson(data as Map<String, dynamic>).toModel();
-  }
+  Future<Crop> addCrop(Crop crop) async => Crop.fromJson(_map(await _api.post('/v1/crops', body: crop.toJson())));
 
   @override
-  Future<void> updateCrop(Crop crop) => _api.put('/crops/${crop.id}', body: CropDto.fromModel(crop).toJson());
+  Future<void> updateCrop(Crop crop) => _api.put('/v1/crops/${crop.id}', body: crop.toJson());
 
   @override
-  Future<void> deleteCrop(String cropId) => _api.delete('/crops/$cropId');
+  Future<void> deleteCrop(String cropId) => _api.delete('/v1/crops/$cropId');
 }
 
-/// Wire format for a crop. Kept separate from the domain model so API field
-/// names (e.g. MongoDB `_id`) never leak into the UI.
-class CropDto {
-  CropDto(this.json);
-  final Map<String, dynamic> json;
+class ApiTaskRepository implements TaskRepository {
+  ApiTaskRepository(this._api);
+  final ApiClient _api;
 
-  factory CropDto.fromJson(Map<String, dynamic> json) => CropDto(json);
+  @override
+  Future<List<FarmTask>> getTasks(List<Crop> crops) async =>
+      _list(await _api.get('/v1/tasks')).map(FarmTask.fromJson).toList();
 
-  factory CropDto.fromModel(Crop c) => CropDto({...c.toJson(), '_id': c.id}..remove('id'));
+  @override
+  Future<FarmTask> setCompleted(FarmTask task, bool done) async =>
+      FarmTask.fromJson(_map(await _api.patch('/v1/tasks/${task.id}', body: {'done': done})));
 
-  Crop toModel() => Crop.fromJson({...json, 'id': json['_id'] ?? json['id']});
+  @override
+  Future<FarmTask> setReminder(FarmTask task, ReminderOption reminder) async =>
+      FarmTask.fromJson(_map(await _api.patch('/v1/tasks/${task.id}', body: {'reminder': reminder.name})));
 
-  Map<String, dynamic> toJson() => json;
+  @override
+  Future<void> onCropAdded(Crop crop) async {} // the server applies the rule on create
+
+  @override
+  Future<void> clearForCrop(String cropId) async {} // the server cleans up on delete
 }
 
 class ApiWeatherRepository implements WeatherRepository {
@@ -64,24 +117,103 @@ class ApiWeatherRepository implements WeatherRepository {
   final ApiClient _api;
 
   @override
-  Future<WeatherReport> getForecast(String district) async {
-    final data = await _api.get('/weather', query: {'district': district}) as Map<String, dynamic>;
-    return WeatherReport(
-      location: data['location'] as String? ?? district,
-      current: CurrentWeather.fromJson(data['current'] as Map<String, dynamic>),
-      daily: (data['daily'] as List).whereType<Map<String, dynamic>>().map(DailyForecast.fromJson).toList(),
-      updatedAt: DateTime.tryParse(data['updatedAt'] as String? ?? '') ?? DateTime.now(),
-      isSample: false,
-    );
-  }
+  Future<WeatherReport> getForecast(String district) async =>
+      WeatherReport.fromJson(_map(await _api.get('/v1/weather', query: {'district': district})));
 
   @override
   Future<List<WeatherAlert>> getAlerts(String district) async =>
-      throw UnimplementedError('Alerts endpoint is part of Phase 2');
+      _list(await _api.get('/v1/weather/alerts')).map(WeatherAlert.fromJson).toList();
 
   @override
-  Future<void> markAlertRead(String alertId) => _api.post('/weather/alerts/$alertId/read');
+  Future<void> markAlertRead(String alertId) => _api.post('/v1/weather/alerts/$alertId/read');
 
   @override
-  Future<void> markAllAlertsRead() => _api.post('/weather/alerts/read-all');
+  Future<void> markAllAlertsRead() => _api.post('/v1/weather/alerts/read-all');
+}
+
+class ApiRecommendationRepository implements RecommendationRepository {
+  ApiRecommendationRepository(this._api);
+  final ApiClient _api;
+
+  @override
+  Future<List<FertilizerGuide>> fertilizerGuides(String cropTypeId) async =>
+      _list(await _api.get('/v1/guidance/$cropTypeId/fertilizer')).map(FertilizerGuide.fromJson).toList();
+
+  @override
+  Future<List<PestGuide>> pestGuides(String cropTypeId) async =>
+      _list(await _api.get('/v1/guidance/$cropTypeId/pests')).map(PestGuide.fromJson).toList();
+
+  @override
+  Future<List<PesticideGuide>> pesticideGuides(String cropTypeId) async =>
+      _list(await _api.get('/v1/guidance/$cropTypeId/sprays')).map(PesticideGuide.fromJson).toList();
+
+  @override
+  Future<IrrigationGuide?> irrigationGuide(String cropTypeId) async {
+    final d = await _api.get('/v1/guidance/$cropTypeId/irrigation');
+    return d is Map<String, dynamic> ? IrrigationGuide.fromJson(d) : null;
+  }
+
+  @override
+  Future<List<Advice>> advice({
+    required List<Crop> crops,
+    required List<FarmTask> tasks,
+    WeatherReport? weather,
+  }) async => _list(await _api.get('/v1/advice')).map(Advice.fromJson).toList();
+
+  @override
+  Future<AssistantAnswer> ask({
+    required String question,
+    required List<Crop> crops,
+    required List<FarmTask> tasks,
+    WeatherReport? weather,
+  }) async => AssistantAnswer.fromJson(_map(await _api.post('/v1/ask', body: {'question': question})));
+}
+
+class ApiNotificationRepository implements NotificationRepository {
+  ApiNotificationRepository(this._api);
+  final ApiClient _api;
+
+  @override
+  Future<List<AppNotification>> getNotifications() async =>
+      _list(await _api.get('/v1/notifications')).map(AppNotification.fromJson).toList();
+
+  @override
+  Future<void> markRead(String id) => _api.post('/v1/notifications/$id/read');
+
+  @override
+  Future<void> markAllRead() => _api.post('/v1/notifications/read-all');
+
+  @override
+  Future<void> delete(String id) => _api.delete('/v1/notifications/$id');
+
+  @override
+  Future<void> restore(AppNotification notification) => _api.post('/v1/notifications/${notification.id}/restore');
+}
+
+class ApiRecordsRepository implements RecordsRepository {
+  ApiRecordsRepository(this._api);
+  final ApiClient _api;
+
+  @override
+  Future<List<ActivityRecord>> getActivities() async =>
+      _list(await _api.get('/v1/records/activities')).map(ActivityRecord.fromJson).toList();
+
+  @override
+  Future<List<ExpenseRecord>> getExpenses() async =>
+      _list(await _api.get('/v1/records/expenses')).map(ExpenseRecord.fromJson).toList();
+
+  @override
+  Future<void> addActivity(ActivityRecord record) => _api.post('/v1/records/activities', body: record.toJson());
+
+  @override
+  Future<void> deleteActivity(String id) => _api.delete('/v1/records/activities/$id');
+
+  @override
+  Future<void> deleteActivityForTask(String taskId) async {} // the server does this when a task is un-done
+
+  @override
+  Future<void> addExpense(ExpenseRecord record) => _api.post('/v1/records/expenses', body: record.toJson());
+
+  @override
+  Future<void> deleteExpense(String id) => _api.delete('/v1/records/expenses/$id');
 }

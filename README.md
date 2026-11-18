@@ -4,11 +4,24 @@ FASAL is a Flutter app for Pakistani farmers. It tells them **what to do, when, 
 through the crop season: crop calendar, today's tasks, weather explained for their crop,
 irrigation/fertilizer/pest guidance, voice read-out in Urdu or English, and farm records.
 
-> **Phase 1 (this repo): complete frontend with mock data.** No backend, live weather, AI or
-> push notifications yet. All agricultural content is **sample data** and is labelled as such
-> in the app. Phase 2 adds the Node.js/Express + MongoDB backend.
+> **Phase 1:** complete Flutter frontend (works offline on mock data).
+> **Phase 2:** a **Dart backend** (`server/`: Shelf + MongoDB) with phone/OTP sign-in, live
+> weather (Open-Meteo), weather alerts, reminders and synced farm data. App and server share
+> one Dart package (`packages/fasal_core`) for models, the crop catalog and the farming rules.
+> Agricultural guidance is still **sample content** (labelled in the app) until reviewed by experts.
 
 ---
+
+## Repository layout
+
+```
+FASAL/
+├── lib/, test/            Flutter app (Android/iOS)
+├── packages/fasal_core/   Shared Dart: models + JSON, crop catalog, guidance, task/irrigation/alert rules
+├── server/                Dart REST API (Shelf) + MongoDB, Dockerfile, tests
+├── docker-compose.yml     MongoDB + API for local development
+└── docs/                  User flow diagram, API reference
+```
 
 ## Quick start
 
@@ -32,6 +45,25 @@ delete `test/widget_test.dart` if it was created, and add this inside `<queries>
     <action android:name="android.intent.action.TTS_SERVICE" />
 </intent>
 ```
+
+### Run the app against the backend
+
+```bash
+# 1. Start MongoDB + the API (needs Docker)
+docker compose up --build            # API on http://localhost:8080
+
+#    …or without Docker (in-memory storage, data lost on restart):
+cd server && dart pub get && dart run bin/server.dart
+
+# 2. Run the app pointed at it
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080   # Android emulator
+flutter run --dart-define=API_BASE_URL=http://192.168.1.20:8080   # real phone on the same Wi-Fi (your PC's IP)
+```
+
+Without `API_BASE_URL` the app runs fully offline on mock data (no sign-in), as in Phase 1.
+With it, the flow becomes: language → onboarding → **phone number → 6-digit code** → profile → crops.
+In development the server returns the code in the response and the app shows it, so no SMS
+provider is needed for testing.
 
 ### Quality checks
 
@@ -142,22 +174,59 @@ lib/
 - **Tasks before Fasal:** when a crop is added with a past sowing date, tasks due more than
   3 days earlier count as already done, so the farmer isn't flooded with "overdue" items.
 
-### Backend contract (Phase 2 draft)
+## Backend (Phase 2) — Dart + MongoDB
+
+**Why Dart:** one language across the whole project. The app and server import the same
+`fasal_core` models (`toJson`/`fromJson`), crop catalog and rules (task scheduling, irrigation
+advice, weather alerts, Ask Fasal). The wire format can't drift, and offline mode gives the same answers.
+
+| Concern | Implementation |
+|---|---|
+| HTTP | `shelf` + `shelf_router`, JSON, `/v1` prefix, CORS, request logging, 64 KB body limit |
+| Database | MongoDB (local Docker or **MongoDB Atlas**) via `mongo_dart`; an in-memory store for tests/dev; indexes on `userId`, unique `phone` |
+| Auth | Phone + 6-digit OTP (hashed, 5-min expiry, 5 attempts, 60 s resend, per-IP rate limit) → HS256 JWT (30 days) stored in the app's secure storage |
+| Weather | **Open-Meteo** (free, no API key) per district coordinates, cached 30 min, stale-on-error fallback |
+| Alerts | Generated from the forecast (rain/heavy rain, heat ≥38 °C, cold ≤4 °C, wind ≥30 km/h), history + read state per user |
+| Notifications | Task-due, day-before, stage-change and weather notifications, idempotent; hourly background sync; `PushSender` interface ready for FCM |
+| Privacy | `DELETE /v1/me` erases the account and all data; secrets only from environment variables |
+
+### Server configuration (`server/.env.example`)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `PORT` | `8080` | |
+| `APP_ENV` | `development` | `production` disables returning the OTP and requires `JWT_SECRET` + `MONGODB_URI` |
+| `JWT_SECRET` | random (dev) | ≥32 characters in production |
+| `MONGODB_URI` | — (in-memory) | e.g. `mongodb+srv://user:pass@cluster.mongodb.net/fasal` |
+| `WEATHER_PROVIDER` | `openmeteo` | `sample` for offline development |
+| `CORS_ORIGINS` | `*` | |
+
+### Deploying (free/cheap options)
+
+1. Create a free **MongoDB Atlas** cluster and copy its connection string.
+2. Deploy the Docker image (`docker build -f server/Dockerfile .`) to Render, Railway, Fly.io or
+   Google Cloud Run with `APP_ENV=production`, `JWT_SECRET`, `MONGODB_URI`.
+3. Build the app with `--dart-define=API_BASE_URL=https://your-api-host`.
+
+**Before real farmers use it:** plug an SMS gateway into `SmsSender` (Twilio or a local Pakistani
+aggregator), add Firebase Cloud Messaging to the app and a `PushSender` on the server for push
+notifications, and have the guidance content reviewed by agronomists.
+
+Full endpoint list: [`docs/api.md`](docs/api.md).
+
+### Backend contract (summary)
 
 | Method | Endpoint | Used by |
 |---|---|---|
-| `POST` | `/auth/otp`, `/auth/verify` | AuthRepository (phone OTP) |
-| `GET/PUT` | `/me` | ProfileRepository |
-| `GET/POST/PUT/DELETE` | `/crops`, `/crops/:id` | CropRepository (`ApiCropRepository` written) |
-| `GET` | `/crops/:id/tasks`, `PATCH /tasks/:id` | TaskRepository |
-| `GET` | `/weather?district=`, `/weather/alerts?district=` | WeatherRepository (`ApiWeatherRepository` written); the server holds the weather API key |
-| `GET` | `/guidance/:cropType/{fertilizer,pests,sprays,irrigation}` | RecommendationRepository |
-| `POST` | `/ask` | Ask Fasal |
-| `GET/PATCH/DELETE` | `/notifications` | NotificationRepository (+ FCM push) |
-| `GET/POST/DELETE` | `/records/activities`, `/records/expenses` | RecordsRepository |
-
-Run against a backend:
-`flutter run --dart-define=USE_MOCK_DATA=false --dart-define=API_BASE_URL=https://api.example.com/v1`
+| `POST` | `/v1/auth/otp/request`, `/v1/auth/otp/verify` | AuthRepository |
+| `GET` `PUT` `DELETE` | `/v1/me`, `/v1/me/profile` | ProfileRepository, account deletion |
+| `GET` `POST` `PUT` `DELETE` | `/v1/crops`, `/v1/crops/:id` | CropRepository |
+| `GET` `PATCH` | `/v1/tasks`, `/v1/tasks/:id` | TaskRepository (completing logs a record) |
+| `GET` `POST` | `/v1/weather`, `/v1/weather/alerts`, `…/:id/read`, `…/read-all` | WeatherRepository |
+| `GET` | `/v1/guidance/:cropType/{fertilizer,pests,sprays,irrigation}`, `/v1/advice` | RecommendationRepository |
+| `POST` | `/v1/ask` | Ask Fasal |
+| `GET` `POST` `DELETE` | `/v1/notifications…`, `/v1/devices` | NotificationRepository, push tokens |
+| `GET` `POST` `DELETE` | `/v1/records/activities…`, `/v1/records/expenses…` | RecordsRepository |
 
 ## Tests
 
@@ -169,6 +238,14 @@ Run against a backend:
   an expense, voice controls.
 - `test/widget/screens_render_test.dart`: opens every screen in English and Urdu at
   320×640 and 412×915; any overflow or exception fails the test.
+- `test/unit/api_repositories_test.dart`: the app's API repositories against a fake HTTP layer
+  (request shapes, token handling, error mapping, session expiry).
+- `packages/fasal_core/test/`: JSON round trips for every model (the app⇄server contract), alert rules, phone rules.
+- `server/test/api_test.dart`: 17 API tests covering OTP auth (validation, expiry, resend limit, single use),
+  JWT tampering/expiry, data isolation between users, crop/task/record flows, weather and alerts,
+  notifications, guidance, Ask Fasal and account deletion.
+- `server/test/mongo_test.dart`: the same main flow against a real MongoDB (CI service container).
+  CI also compiles the server, smoke-tests it over HTTP and builds the Docker image.
 
 ### Latest results (CI on Flutter 3.50.0 stable)
 
@@ -185,12 +262,14 @@ See [`docs/user-flow.md`](docs/user-flow.md) for the full Mermaid flowchart, inc
 alternate flows (no crops, invalid input, missing location, weather unavailable, empty
 notifications, task completed, crop edited/removed, permission denied, errors).
 
-## Known limitations (by design in Phase 1)
+## Known limitations
 
-- Weather, alerts, notifications and advice are sample data; nothing is fetched online.
-- "Use my location" returns a demo district; GPS comes with the backend.
-- Reminders are saved but not delivered as phone notifications yet.
-- Photo diagnosis and voice questions are shown as "coming soon".
+- SMS delivery is not connected yet: the dev server returns the code instead (`SmsSender` interface ready).
+- Push notifications: notifications are created on the server and shown in the app, but phone push
+  needs Firebase Cloud Messaging set up (`PushSender` interface ready).
+- "Use my location" still returns a demo district; GPS needs `geolocator` + location permission.
+- Guidance content and Ask Fasal answers are sample rules, not expert-verified or AI.
+- Photo diagnosis and voice questions are still shown as "coming soon".
 
 ## License & credits
 

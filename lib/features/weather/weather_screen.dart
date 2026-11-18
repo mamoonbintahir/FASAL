@@ -1,19 +1,20 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/constants/districts.dart';
+import 'package:fasal_core/catalog.dart';
+
 import '../../core/l10n/app_localizations.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/network/app_exception.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/date_utils.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../../core/widgets/basics.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/feedback.dart';
-import '../../data/models/localized_text.dart';
-import '../../data/models/weather.dart';
 import '../../providers/farm_providers.dart';
 import '../../widgets/listen_button.dart';
 import '../../widgets/weather_widgets.dart';

@@ -4,7 +4,9 @@ import '../core/l10n/app_localizations.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/widgets/basics.dart';
-import '../data/models/farm_task.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../providers/farm_providers.dart';
 
 /// Green hero card: "Wheat · Day 38 / Tillering / expected harvest".

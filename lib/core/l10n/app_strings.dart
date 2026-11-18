@@ -1,9 +1,5 @@
-import '../../data/models/app_notification.dart';
-import '../../data/models/farm_record.dart';
-import '../../data/models/farm_task.dart';
-import '../../data/models/guidance.dart';
-import '../../data/models/user_profile.dart';
-import '../../data/models/weather.dart';
+import 'package:fasal_core/models.dart';
+
 import '../utils/formatters.dart';
 
 /// All UI strings for FASAL in English and Urdu.
@@ -81,6 +77,44 @@ class AppStrings {
     'Get reminders for irrigation and fertilizer. Tap Listen to hear any advice.',
     'آبپاشی اور کھاد کی یاد دہانی پائیں۔ کوئی بھی مشورہ سننے کے لیے "سنیں" دبائیں۔',
   );
+
+  // ───────────────────────── Sign in ─────────────────────────
+  String get signInTitle => _t('Sign in with your phone', 'فون نمبر سے سائن اِن کریں');
+  String get signInBody => _t(
+    'We will send a 6-digit code by SMS. Your crops and records are saved to your account.',
+    'ہم SMS کے ذریعے 6 ہندسوں کا کوڈ بھیجیں گے۔ آپ کی فصلیں اور ریکارڈ آپ کے اکاؤنٹ میں محفوظ رہیں گے۔',
+  );
+  String get mobileNumber => _t('Mobile number', 'موبائل نمبر');
+  String get phoneHint => '0300 1234567';
+  String get sendCode => _t('Send code', 'کوڈ بھیجیں');
+  String get errPhone =>
+      _t('Enter a valid mobile number, e.g. 0300 1234567', 'درست موبائل نمبر لکھیں، مثلاً 0300 1234567');
+  String get enterCode => _t('Enter the code', 'کوڈ درج کریں');
+  String codeSentTo(String phone) => _t('We sent a 6-digit code to $phone', 'ہم نے $phone پر 6 ہندسوں کا کوڈ بھیجا ہے');
+  String get verify => _t('Verify', 'تصدیق کریں');
+  String get resendCode => _t('Send code again', 'کوڈ دوبارہ بھیجیں');
+  String resendIn(int s) => _t('Send again in $s s', '$s سیکنڈ میں دوبارہ بھیجیں');
+  String devCode(String code) => _t('Development server — your code is $code', 'ڈیولپمنٹ سرور — آپ کا کوڈ $code ہے');
+  String get errCode => _t('Enter the 6-digit code', '6 ہندسوں کا کوڈ درج کریں');
+  String get changeNumber => _t('Change number', 'نمبر تبدیل کریں');
+  String get networkError => _t(
+    'No internet connection. Check your connection and try again.',
+    'انٹرنیٹ دستیاب نہیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+  );
+  String get sessionExpired =>
+      _t('Your session has ended. Please sign in again.', 'آپ کا سیشن ختم ہو گیا۔ براہِ کرم دوبارہ سائن اِن کریں۔');
+  String get account => _t('Account', 'اکاؤنٹ');
+  String get signOut => _t('Sign out', 'سائن آؤٹ');
+  String get signOutBody => _t(
+    'You can sign in again any time with your phone number.',
+    'آپ کسی بھی وقت اپنے فون نمبر سے دوبارہ سائن اِن کر سکتے ہیں۔',
+  );
+  String get deleteAccount => _t('Delete account', 'اکاؤنٹ حذف کریں');
+  String get deleteAccountBody => _t(
+    'This permanently deletes your profile, crops and records from the server.',
+    'اس سے آپ کا پروفائل، فصلیں اور ریکارڈ سرور سے ہمیشہ کے لیے حذف ہو جائیں گے۔',
+  );
+  String get syncedWithServer => _t('Saved to your account', 'آپ کے اکاؤنٹ میں محفوظ');
 
   // ───────────────────────── Setup / profile ─────────────────────────
   String get tellUsAboutYou => _t('Tell us about you', 'اپنے بارے میں بتائیں');

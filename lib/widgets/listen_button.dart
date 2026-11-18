@@ -5,7 +5,9 @@ import '../core/l10n/app_localizations.dart';
 import '../core/l10n/app_strings.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
-import '../data/models/localized_text.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../providers/tts_provider.dart';
 
 /// Builds the same sentence in English and Urdu so voice can fall back to

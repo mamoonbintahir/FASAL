@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/basics.dart';
 import '../../core/widgets/controls.dart';
+import '../../providers/repository_providers.dart';
 import '../../providers/settings_provider.dart';
 
 /// Four short, skippable intro pages.
@@ -23,7 +24,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _finish() {
     ref.read(settingsProvider.notifier).completeOnboarding();
-    context.go('/setup');
+    context.go(ref.read(authRepositoryProvider).requiresSignIn ? '/login' : '/setup');
   }
 
   @override

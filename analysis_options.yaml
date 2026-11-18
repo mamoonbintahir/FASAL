@@ -3,6 +3,9 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - build/**
+    # Analyzed separately in their own packages (see CI).
+    - packages/**
+    - server/**
   language:
     strict-casts: true
 

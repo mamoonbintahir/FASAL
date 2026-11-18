@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
+import '../../providers/repository_providers.dart';
 import '../../providers/settings_provider.dart';
 import 'fasal_logo.dart';
 
@@ -26,13 +27,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _timer = Timer(const Duration(milliseconds: 1400), _next);
   }
 
-  void _next() {
+  Future<void> _next() async {
     if (!mounted) return;
     final s = ref.read(settingsProvider);
+    final auth = ref.read(authRepositoryProvider);
+    final signedIn = !auth.requiresSignIn || await auth.isSignedIn();
+    if (!mounted) return;
     if (s.languageCode == null) {
       context.go('/language');
     } else if (!s.onboardingDone) {
       context.go('/onboarding');
+    } else if (!signedIn) {
+      context.go('/login');
     } else if (!s.setupDone) {
       context.go('/setup');
     } else {

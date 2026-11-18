@@ -4,13 +4,13 @@ import '../config/env.dart';
 import '../storage/secure_storage.dart';
 import 'app_exception.dart';
 
-/// Thin wrapper around Dio for the future REST backend (Phase 2).
+/// Thin wrapper around Dio for the FASAL Dart server.
 ///
-/// - Attaches the auth token from secure storage.
+/// - Attaches the session token from secure storage.
 /// - Maps Dio errors to [AppException] so the UI stays transport-agnostic.
-/// Not used for live calls in Phase 1 (mock repositories are active).
+/// - Reports expired sessions through [onUnauthorized].
 class ApiClient {
-  ApiClient({required SecureStorage secureStorage, Dio? dio})
+  ApiClient({required SecureStorage secureStorage, Dio? dio, this.onUnauthorized})
     : _secure = secureStorage,
       _dio =
           dio ??
@@ -29,6 +29,10 @@ class ApiClient {
           if (token != null) options.headers['Authorization'] = 'Bearer $token';
           handler.next(options);
         },
+        onError: (error, handler) {
+          if (error.response?.statusCode == 401) onUnauthorized?.call();
+          handler.next(error);
+        },
       ),
     );
   }
@@ -36,12 +40,17 @@ class ApiClient {
   final Dio _dio;
   final SecureStorage _secure;
 
+  /// Called when the server rejects the session (the app returns to sign-in).
+  final void Function()? onUnauthorized;
+
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
       _guard(() => _dio.get<dynamic>(path, queryParameters: query));
 
   Future<dynamic> post(String path, {Object? body}) => _guard(() => _dio.post<dynamic>(path, data: body));
 
   Future<dynamic> put(String path, {Object? body}) => _guard(() => _dio.put<dynamic>(path, data: body));
+
+  Future<dynamic> patch(String path, {Object? body}) => _guard(() => _dio.patch<dynamic>(path, data: body));
 
   Future<dynamic> delete(String path) => _guard(() => _dio.delete<dynamic>(path));
 
@@ -63,18 +72,23 @@ class ApiClient {
         return const NetworkException();
       case DioExceptionType.badResponse:
         final code = e.response?.statusCode;
-        if (code == 401) return const UnauthorizedException();
-        if (code == 404) return const NotFoundException();
-        if (code == 422 || code == 400) return ValidationException(_messageFrom(e) ?? 'Invalid request');
-        return ServerException(_messageFrom(e) ?? 'Server error', statusCode: code);
+        final message = _messageFrom(e);
+        if (code == 401) return UnauthorizedException(message ?? 'Session expired');
+        if (code == 404) return NotFoundException(message ?? 'Not found');
+        if (code == 400 || code == 422 || code == 429) return ValidationException(message ?? 'Invalid request');
+        return ServerException(message ?? 'Server error', statusCode: code);
       default:
         return ServerException(e.message ?? 'Unexpected error');
     }
   }
 
+  /// Reads `{"error": {"message": ...}}` from FASAL server responses.
   String? _messageFrom(DioException e) {
     final data = e.response?.data;
-    if (data is Map && data['message'] is String) return data['message'] as String;
+    if (data is Map) {
+      final err = data['error'];
+      if (err is Map && err['message'] is String) return err['message'] as String;
+    }
     return null;
   }
 }

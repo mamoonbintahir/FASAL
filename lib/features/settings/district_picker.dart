@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../core/constants/districts.dart';
+import 'package:fasal_core/catalog.dart';
+
 import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';

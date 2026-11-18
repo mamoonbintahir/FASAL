@@ -1,14 +1,10 @@
 import 'package:fasal/core/l10n/app_strings.dart';
 import 'package:fasal/core/utils/formatters.dart';
 import 'package:fasal/core/utils/validators.dart';
-import 'package:fasal/data/mock/crop_catalog.dart';
-import 'package:fasal/data/mock/engine/advisors.dart';
-import 'package:fasal/data/mock/engine/task_scheduler.dart';
+import 'package:fasal_core/catalog.dart';
+import 'package:fasal_core/engine.dart';
 import 'package:fasal/data/mock/mock_weather_data.dart';
-import 'package:fasal/data/models/crop.dart';
-import 'package:fasal/data/models/farm_task.dart';
-import 'package:fasal/data/models/guidance.dart';
-import 'package:fasal/data/models/user_profile.dart';
+import 'package:fasal_core/models.dart';
 import 'package:fasal/providers/settings_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 

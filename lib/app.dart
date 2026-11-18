@@ -5,6 +5,8 @@ import 'core/l10n/app_localizations.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'providers/core_providers.dart';
+import 'providers/repository_providers.dart';
 import 'providers/settings_provider.dart';
 import 'providers/tts_provider.dart';
 
@@ -28,6 +30,15 @@ class FasalApp extends ConsumerWidget {
         ..showSnackBar(
           SnackBar(content: Text(next.notice == TtsNotice.urduMissing ? s.urduVoiceMissing : s.ttsUnavailable)),
         );
+    });
+
+    // Server rejected the session → sign out and return to the sign-in screen.
+    ref.listen<int>(sessionEventsProvider, (prev, next) async {
+      final location = router.routerDelegate.currentConfiguration.uri.path;
+      if (location.startsWith('/login') || location == '/splash') return;
+      await ref.read(authRepositoryProvider).signOut();
+      router.go('/login');
+      rootMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(AppStrings(isUrdu: urdu).sessionExpired)));
     });
 
     return MaterialApp.router(

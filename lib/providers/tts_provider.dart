@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/models/localized_text.dart';
+import 'package:fasal_core/models.dart';
+
 import '../services/tts_service.dart';
 import 'settings_provider.dart';
 

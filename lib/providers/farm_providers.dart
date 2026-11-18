@@ -1,16 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/network/app_exception.dart';
-import '../core/utils/date_utils.dart';
-import '../data/mock/engine/advisors.dart';
-import '../data/models/app_notification.dart';
-import '../data/models/crop.dart';
-import '../data/models/crop_definition.dart';
-import '../data/models/farm_record.dart';
-import '../data/models/farm_task.dart';
-import '../data/models/guidance.dart';
-import '../data/models/user_profile.dart';
-import '../data/models/weather.dart';
+
+import 'package:fasal_core/models.dart';
+import 'package:fasal_core/engine.dart';
+
 import 'core_providers.dart';
 import 'repository_providers.dart';
 import 'settings_provider.dart';
@@ -42,7 +36,7 @@ class CropsNotifier extends AsyncNotifier<List<Crop>> {
 
   Future<Crop> add(Crop crop) async {
     final saved = await ref.read(cropRepositoryProvider).addCrop(crop);
-    await _markPastTasksDone(saved);
+    await ref.read(taskRepositoryProvider).onCropAdded(saved);
     state = AsyncData([..._current, saved]);
     return saved;
   }
@@ -56,22 +50,6 @@ class CropsNotifier extends AsyncNotifier<List<Crop>> {
     await ref.read(cropRepositoryProvider).deleteCrop(cropId);
     await ref.read(taskRepositoryProvider).clearForCrop(cropId);
     state = AsyncData(_current.where((c) => c.id != cropId).toList());
-  }
-
-  /// Product decision: when a crop is added with a past sowing date, tasks that
-  /// were due more than 3 days before it was added are treated as already
-  /// handled (the farmer did them before using Fasal) instead of flooding the
-  /// "overdue" list. Recent ones stay visible as overdue.
-  Future<void> _markPastTasksDone(Crop crop) async {
-    final def = ref.read(cropCatalogProvider).byId(crop.cropTypeId);
-    if (def == null) return;
-    final cutoff = AppDates.dateOnly(crop.createdAt).subtract(const Duration(days: 3));
-    final sown = AppDates.dateOnly(crop.sowingDate);
-    final repo = ref.read(taskRepositoryProvider);
-    for (final t in def.templates) {
-      final due = sown.add(Duration(days: t.day));
-      if (due.isBefore(cutoff)) await repo.setCompleted('${crop.id}_${t.id}', due);
-    }
   }
 }
 
@@ -131,46 +109,24 @@ class TasksNotifier extends AsyncNotifier<List<FarmTask>> {
   }
 
   /// Completing a task also logs it in Records → Crop history.
+  /// Completing a task also logs it in Records → Crop history (repository/server side).
   Future<void> toggle(FarmTask task) async {
-    final repo = ref.read(taskRepositoryProvider);
-    final records = ref.read(recordsRepositoryProvider);
-    if (task.isDone) {
-      _replace(task.copyWith(clearCompleted: true));
-      await repo.setCompleted(task.id, null);
-      await records.deleteActivityForTask(task.id);
-    } else {
-      final now = DateTime.now();
-      _replace(task.copyWith(completedAt: now));
-      await repo.setCompleted(task.id, now);
-      await records.addActivity(
-        ActivityRecord(
-          id: newId('act'),
-          cropId: task.cropId,
-          type: activityTypeFor(task.type),
-          date: now,
-          sourceTaskId: task.id,
-          title: task.title,
-        ),
-      );
+    final optimistic = task.isDone ? task.copyWith(clearCompleted: true) : task.copyWith(completedAt: DateTime.now());
+    _replace(optimistic);
+    try {
+      _replace(await ref.read(taskRepositoryProvider).setCompleted(task, !task.isDone));
+    } catch (_) {
+      _replace(task); // roll back
+      rethrow;
     }
     ref.invalidate(activitiesProvider);
   }
 
   Future<void> setReminder(FarmTask task, ReminderOption r) async {
     _replace(task.copyWith(reminder: r));
-    await ref.read(taskRepositoryProvider).setReminder(task.id, r);
+    _replace(await ref.read(taskRepositoryProvider).setReminder(task, r));
   }
 }
-
-ActivityType activityTypeFor(TaskType t) => switch (t) {
-  TaskType.sowing => ActivityType.sowing,
-  TaskType.irrigation => ActivityType.irrigation,
-  TaskType.fertilizer => ActivityType.fertilizer,
-  TaskType.weeding => ActivityType.weeding,
-  TaskType.inspection || TaskType.pestMonitoring => ActivityType.inspection,
-  TaskType.harvest => ActivityType.harvest,
-  TaskType.seedPrep || TaskType.harvestPrep => ActivityType.other,
-};
 
 final tasksProvider = AsyncNotifierProvider<TasksNotifier, List<FarmTask>>(TasksNotifier.new);
 

@@ -1,23 +1,26 @@
-/// Build-time environment configuration.
+/// Build-time environment configuration (from `--dart-define`, never hardcoded).
 ///
-/// Values come from `--dart-define`, so no URLs or keys are hardcoded:
-///
+/// Offline demo (mock data, no sign-in):
 /// ```
-/// flutter run --dart-define=USE_MOCK_DATA=false --dart-define=API_BASE_URL=https://api.example.com/v1
+/// flutter run
 /// ```
-///
-/// Secrets (API keys for weather etc.) must live on the backend, never in the app.
+/// Against the FASAL Dart server (phone sign-in, real weather, synced data):
+/// ```
+/// flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080   # Android emulator → local server
+/// flutter run --dart-define=API_BASE_URL=https://api.your-domain.com
+/// ```
+/// Secrets (weather keys, DB credentials) live on the server, never in the app.
 abstract final class Env {
-  /// Phase 1 runs entirely on mock repositories.
-  static const bool useMockData = bool.fromEnvironment('USE_MOCK_DATA', defaultValue: true);
-
-  /// Base URL of the future Node.js/Express REST API. Must be HTTPS in production.
+  /// Base URL of the FASAL API (without `/v1`). Must be HTTPS in production.
   static const String apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
+  /// Mock repositories are used when no API URL is configured.
+  static const bool useMockData = apiBaseUrl == '';
 
   static const Duration apiTimeout = Duration(seconds: 20);
 
   /// Simulated network delay for mock repositories so loading states are visible.
   static const Duration mockLatency = Duration(milliseconds: 350);
 
-  static const String appVersion = '0.1.0 (Phase 1 – frontend demo)';
+  static const String appVersion = '0.2.0 (Phase 2)';
 }

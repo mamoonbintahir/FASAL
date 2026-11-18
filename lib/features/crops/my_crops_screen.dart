@@ -8,7 +8,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/basics.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/feedback.dart';
-import '../../data/models/farm_task.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../../providers/farm_providers.dart';
 import '../../widgets/crop_widgets.dart';
 

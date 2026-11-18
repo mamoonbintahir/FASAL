@@ -1,4 +1,4 @@
-name: Flutter CI
+name: CI
 
 on:
   push:
@@ -7,6 +7,65 @@ on:
   workflow_dispatch:
 
 jobs:
+  core:
+    name: fasal_core (shared Dart package)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/fasal_core
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - run: dart test
+
+  server:
+    name: Dart server (API + MongoDB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - name: Test (in-memory + real MongoDB)
+        env:
+          MONGODB_URI: mongodb://localhost:27017/fasal_test
+        run: dart test --reporter expanded
+      - name: Smoke test the compiled server over HTTP
+        env:
+          MONGODB_URI: mongodb://localhost:27017/fasal_smoke
+          JWT_SECRET: ci-smoke-secret-that-is-long-enough-0123456789
+          WEATHER_PROVIDER: sample
+        run: |
+          dart compile exe bin/server.dart -o /tmp/fasal-server
+          /tmp/fasal-server > /tmp/server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:8080/health && break; sleep 1; done
+          CODE=$(curl -sf -X POST localhost:8080/v1/auth/otp/request -H 'content-type: application/json' -d '{"phone":"03001234567"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["devCode"])')
+          TOKEN=$(curl -sf -X POST localhost:8080/v1/auth/otp/verify -H 'content-type: application/json' -d "{\"phone\":\"03001234567\",\"code\":\"$CODE\"}" | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+          curl -sf -X PUT localhost:8080/v1/me/profile -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"district":"Sahiwal","farmArea":5}'
+          curl -sf localhost:8080/v1/weather -H "authorization: Bearer $TOKEN" | python3 -c 'import sys,json;d=json.load(sys.stdin);assert len(d["daily"])==7;print("weather ok")'
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/v1/crops)" = "401"
+          cat /tmp/server.log
+      - name: Docker image builds
+        working-directory: .
+        run: docker build -f server/Dockerfile -t fasal-api .
+
   analyze-test-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30

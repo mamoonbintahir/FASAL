@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/models/app_notification.dart';
-import '../data/models/user_profile.dart';
+import 'package:fasal_core/models.dart';
+
 import 'core_providers.dart';
 
 /// App-level preferences (non-sensitive), persisted locally.

@@ -8,7 +8,12 @@ flowchart TD
     B -->|first run| C[Language selection<br/>English / اردو]
     B -->|returning farmer| H
     C --> D[Onboarding · 4 pages<br/>Skip available]
-    D --> E[Farmer setup<br/>name · district · farm area + unit]
+    D -->|offline build| E
+    D -->|connected to server| L1[Phone number]
+    L1 --> L2[6-digit SMS code]
+    L2 -->|existing account| H
+    L2 -->|new farmer| E
+    E[Farmer setup<br/>name · district · farm area + unit]
     E --> F[Add crop<br/>select crop · variety]
     F --> F1[Enter sowing date]
     F1 --> F2[Enter farm area · seed · field]
@@ -52,6 +57,10 @@ flowchart TD
     I -. crop removed .-> X10[Confirm dialog → crop + tasks removed, records kept]
     Q -. Urdu voice missing .-> X11[Notice + falls back to English voice]
     H -. any load error .-> X12[Error state + Try again]
+    L1 -. invalid number .-> X13[Inline error]
+    L2 -. wrong / expired code .-> X14[Message · resend after 60 s]
+    H -. session expired .-> L1
+    V -. sign out / delete account .-> L1
 ```
 
 ## Notes

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/config/env.dart';
-import '../../core/constants/districts.dart';
+
+import 'package:fasal_core/catalog.dart';
+
 import '../../core/l10n/app_localizations.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -12,9 +14,12 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/basics.dart';
 import '../../core/widgets/controls.dart';
 import '../../core/widgets/feedback.dart';
-import '../../data/models/app_notification.dart';
+
+import 'package:fasal_core/models.dart';
+
 import '../../providers/core_providers.dart';
 import '../../providers/farm_providers.dart';
+import '../../providers/repository_providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../widgets/listen_button.dart';
 import 'district_picker.dart';
@@ -197,44 +202,91 @@ class SettingsScreen extends ConsumerWidget {
                     ],
                   ),
                   const Gap(16),
-                  // Demo options (Phase 1 only)
-                  _Group(
-                    title: s.demoOptions,
-                    children: [
-                      _Row(
-                        emoji: '🌾',
-                        title: s.loadSampleFarm,
-                        onTap: () async {
-                          await loadSampleFarm(ref);
-                          if (context.mounted) showSnack(context, s.sampleFarmLoaded);
-                        },
-                      ),
-                      SwitchListTile(
-                        value: settings.simulateWeatherError,
-                        onChanged: notifier.setSimulateWeatherError,
-                        secondary: const EmojiIcon('📡', size: 20),
-                        title: Text(s.simulateWeatherError, style: t.titleSmall),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                      _Row(
-                        emoji: '🔄',
-                        title: s.restartDemo,
-                        danger: true,
-                        onTap: () async {
-                          final ok = await showConfirmDialog(
-                            context,
-                            title: s.restartDemo,
-                            body: s.restartDemoBody,
-                            confirmLabel: s.restartDemo,
-                            destructive: true,
-                          );
-                          if (!ok) return;
-                          await restartDemo(ref);
-                          if (context.mounted) context.go('/splash');
-                        },
-                      ),
-                    ],
-                  ),
+                  // Account (when connected to the FASAL server)
+                  if (!Env.useMockData)
+                    _Group(
+                      title: s.account,
+                      children: [
+                        _Row(
+                          emoji: '🚪',
+                          title: s.signOut,
+                          onTap: () async {
+                            final ok = await showConfirmDialog(
+                              context,
+                              title: s.signOut,
+                              body: s.signOutBody,
+                              confirmLabel: s.signOut,
+                            );
+                            if (!ok) return;
+                            await ref.read(authRepositoryProvider).signOut();
+                            await clearLocalSession(ref);
+                            if (context.mounted) context.go('/login');
+                          },
+                        ),
+                        _Row(
+                          emoji: '🗑️',
+                          title: s.deleteAccount,
+                          danger: true,
+                          onTap: () async {
+                            final ok = await showConfirmDialog(
+                              context,
+                              title: s.deleteAccount,
+                              body: s.deleteAccountBody,
+                              confirmLabel: s.delete,
+                              destructive: true,
+                            );
+                            if (!ok) return;
+                            try {
+                              await ref.read(authRepositoryProvider).deleteAccount();
+                            } catch (e) {
+                              if (context.mounted) showSnack(context, s.genericErrorTitle);
+                              return;
+                            }
+                            await clearLocalSession(ref);
+                            if (context.mounted) context.go('/login');
+                          },
+                        ),
+                      ],
+                    ),
+                  // Demo options (offline mode only)
+                  if (Env.useMockData)
+                    _Group(
+                      title: s.demoOptions,
+                      children: [
+                        _Row(
+                          emoji: '🌾',
+                          title: s.loadSampleFarm,
+                          onTap: () async {
+                            await loadSampleFarm(ref);
+                            if (context.mounted) showSnack(context, s.sampleFarmLoaded);
+                          },
+                        ),
+                        SwitchListTile(
+                          value: settings.simulateWeatherError,
+                          onChanged: notifier.setSimulateWeatherError,
+                          secondary: const EmojiIcon('📡', size: 20),
+                          title: Text(s.simulateWeatherError, style: t.titleSmall),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                        _Row(
+                          emoji: '🔄',
+                          title: s.restartDemo,
+                          danger: true,
+                          onTap: () async {
+                            final ok = await showConfirmDialog(
+                              context,
+                              title: s.restartDemo,
+                              body: s.restartDemoBody,
+                              confirmLabel: s.restartDemo,
+                              destructive: true,
+                            );
+                            if (!ok) return;
+                            await restartDemo(ref);
+                            if (context.mounted) context.go('/splash');
+                          },
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -260,6 +312,23 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// After sign-out: forget this device's setup flag and cached account data.
+Future<void> clearLocalSession(WidgetRef ref) async {
+  final store = ref.read(localStoreProvider);
+  final settings = ref.read(settingsProvider);
+  await store.writeJson('settings', settings.copyWith(setupDone: false).toJson());
+  ref
+    ..invalidate(settingsProvider)
+    ..invalidate(profileProvider)
+    ..invalidate(cropsProvider)
+    ..invalidate(tasksProvider)
+    ..invalidate(activitiesProvider)
+    ..invalidate(expensesProvider)
+    ..invalidate(notificationsProvider)
+    ..invalidate(alertsProvider)
+    ..invalidate(weatherProvider);
 }
 
 /// Clears all local data and resets every provider ("Restart demo").
