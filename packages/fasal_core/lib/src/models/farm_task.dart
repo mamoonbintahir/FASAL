@@ -1,4 +1,4 @@
-import '../../core/utils/date_utils.dart';
+import '../dates.dart';
 import 'localized_text.dart';
 
 enum TaskType { seedPrep, sowing, irrigation, fertilizer, inspection, weeding, pestMonitoring, harvestPrep, harvest }
@@ -68,6 +68,34 @@ class FarmTask {
     if (d.isAtSameMomentAs(t)) return TaskStatus.today;
     return TaskStatus.upcoming;
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'cropId': cropId,
+    'cropTypeId': cropTypeId,
+    'type': type.name,
+    'title': title.toJson(),
+    'description': description.toJson(),
+    'dueDate': AppDates.dateOnly(dueDate).toIso8601String(),
+    'importance': importance.name,
+    'stageIndex': stageIndex,
+    'completedAt': completedAt?.toIso8601String(),
+    'reminder': reminder.name,
+  };
+
+  factory FarmTask.fromJson(Map<String, dynamic> j) => FarmTask(
+    id: j['id'] as String,
+    cropId: j['cropId'] as String,
+    cropTypeId: j['cropTypeId'] as String,
+    type: TaskType.values.asNameMap()[j['type']] ?? TaskType.inspection,
+    title: LocalizedText.fromJson(j['title'] as Map<String, dynamic>),
+    description: LocalizedText.fromJson(j['description'] as Map<String, dynamic>),
+    dueDate: DateTime.parse(j['dueDate'] as String),
+    importance: Importance.values.asNameMap()[j['importance']] ?? Importance.medium,
+    stageIndex: (j['stageIndex'] as num?)?.toInt() ?? 0,
+    completedAt: j['completedAt'] == null ? null : DateTime.tryParse(j['completedAt'] as String),
+    reminder: ReminderOption.values.asNameMap()[j['reminder']] ?? ReminderOption.sameDay,
+  );
 
   FarmTask copyWith({DateTime? completedAt, bool clearCompleted = false, ReminderOption? reminder}) => FarmTask(
     id: id,

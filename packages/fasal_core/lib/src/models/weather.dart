@@ -39,6 +39,17 @@ class CurrentWeather {
   final int minTemp;
   final int maxTemp;
 
+  Map<String, dynamic> toJson() => {
+    'temperature': temperature,
+    'feelsLike': feelsLike,
+    'condition': condition.name,
+    'humidity': humidity,
+    'windKmh': windKmh,
+    'rainChance': rainChance,
+    'minTemp': minTemp,
+    'maxTemp': maxTemp,
+  };
+
   factory CurrentWeather.fromJson(Map<String, dynamic> j) => CurrentWeather(
     temperature: (j['temperature'] as num).round(),
     feelsLike: (j['feelsLike'] as num? ?? j['temperature'] as num).round(),
@@ -70,6 +81,16 @@ class DailyForecast {
   final int windKmh;
   final int humidity;
 
+  Map<String, dynamic> toJson() => {
+    'date': date.toIso8601String(),
+    'condition': condition.name,
+    'minTemp': minTemp,
+    'maxTemp': maxTemp,
+    'rainChance': rainChance,
+    'windKmh': windKmh,
+    'humidity': humidity,
+  };
+
   factory DailyForecast.fromJson(Map<String, dynamic> j) => DailyForecast(
     date: DateTime.parse(j['date'] as String),
     condition: WeatherCondition.values.asNameMap()[j['condition']] ?? WeatherCondition.sunny,
@@ -97,6 +118,24 @@ class WeatherReport {
 
   /// True while weather comes from mock data (Phase 1).
   final bool isSample;
+
+  Map<String, dynamic> toJson() => {
+    'location': location,
+    'current': current.toJson(),
+    'daily': [for (final d in daily) d.toJson()],
+    'updatedAt': updatedAt.toIso8601String(),
+    'isSample': isSample,
+  };
+
+  factory WeatherReport.fromJson(Map<String, dynamic> j) => WeatherReport(
+    location: j['location'] as String? ?? '',
+    current: CurrentWeather.fromJson(j['current'] as Map<String, dynamic>),
+    daily: [
+      for (final d in (j['daily'] as List? ?? const []).whereType<Map<String, dynamic>>()) DailyForecast.fromJson(d),
+    ],
+    updatedAt: DateTime.tryParse(j['updatedAt'] as String? ?? '') ?? DateTime.now(),
+    isSample: j['isSample'] as bool? ?? false,
+  );
 
   /// First upcoming day (within [withinDays]) with rain chance >= [threshold].
   DailyForecast? nextRain({int withinDays = 7, int threshold = 60}) {
@@ -144,6 +183,30 @@ class WeatherAlert {
   final DateTime date;
   final List<String> affectedCropTypeIds;
   final bool isRead;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type.name,
+    'severity': severity.name,
+    'title': title.toJson(),
+    'message': message.toJson(),
+    'action': action.toJson(),
+    'date': date.toIso8601String(),
+    'affectedCropTypeIds': affectedCropTypeIds,
+    'isRead': isRead,
+  };
+
+  factory WeatherAlert.fromJson(Map<String, dynamic> j) => WeatherAlert(
+    id: j['id'] as String,
+    type: AlertType.values.asNameMap()[j['type']] ?? AlertType.rain,
+    severity: AlertSeverity.values.asNameMap()[j['severity']] ?? AlertSeverity.info,
+    title: LocalizedText.fromJson(j['title'] as Map<String, dynamic>),
+    message: LocalizedText.fromJson(j['message'] as Map<String, dynamic>),
+    action: LocalizedText.fromJson(j['action'] as Map<String, dynamic>),
+    date: DateTime.parse(j['date'] as String),
+    affectedCropTypeIds: [for (final c in (j['affectedCropTypeIds'] as List? ?? const [])) c.toString()],
+    isRead: j['isRead'] as bool? ?? false,
+  );
 
   bool isActive(DateTime now) => !date.isBefore(DateTime(now.year, now.month, now.day));
 

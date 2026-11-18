@@ -26,6 +26,11 @@ class LocalizedText {
 
   Map<String, dynamic> toJson() => {'en': en, 'ur': ur};
 
+  static List<Map<String, dynamic>> listToJson(List<LocalizedText> items) => [for (final i in items) i.toJson()];
+
+  static List<LocalizedText> listFromJson(Object? raw) =>
+      raw is List ? [for (final i in raw.whereType<Map<String, dynamic>>()) LocalizedText.fromJson(i)] : const [];
+
   factory LocalizedText.fromJson(Map<String, dynamic> json) =>
       LocalizedText(json['en'] as String? ?? '', json['ur'] as String? ?? '');
 

@@ -1,0 +1,11 @@
+name: fasal_core
+description: Shared FASAL domain code (models, crop catalog, guidance and rules) used by the Flutter app and the Dart server.
+version: 0.2.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.13.0
+
+dev_dependencies:
+  test: ^1.26.0
+  lints: ^6.0.0

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../../core/utils/date_utils.dart';
+import '../dates.dart';
 import 'crop_definition.dart';
 import 'user_profile.dart';
 

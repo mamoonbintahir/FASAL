@@ -1,17 +1,13 @@
-import '../../../core/l10n/app_strings.dart';
-import '../../../core/utils/date_utils.dart';
-import '../../models/crop.dart';
-import '../../models/crop_definition.dart';
-import '../../models/farm_task.dart';
-import '../../models/guidance.dart';
-import '../../models/localized_text.dart';
-import '../../models/weather.dart';
-import '../guidance_data.dart';
+import '../dates.dart';
+import '../models/crop.dart';
+import '../models/crop_definition.dart';
+import '../models/farm_task.dart';
+import '../models/guidance.dart';
+import '../models/localized_text.dart';
+import '../models/weather.dart';
+import '../catalog/guidance_data.dart';
 
-const _en = AppStrings(isUrdu: false);
-const _ur = AppStrings(isUrdu: true);
-
-LocalizedText _day(DateTime d) => LocalizedText(_en.weekdayLong(d.weekday), _ur.weekdayLong(d.weekday));
+LocalizedText _day(DateTime d) => AppDates.weekdayName(d.weekday);
 
 /// Rule-based irrigation status from tasks + forecast (SAMPLE logic).
 /// Phase 2: computed by the backend using real forecasts and crop models.

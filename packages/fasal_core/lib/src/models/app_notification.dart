@@ -35,6 +35,26 @@ class AppNotification {
   /// (a shell-relative route such as `tasks` or `alerts`).
   final String? target;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type.name,
+    'title': title.toJson(),
+    'body': body.toJson(),
+    'createdAt': createdAt.toIso8601String(),
+    'isRead': isRead,
+    'target': target,
+  };
+
+  factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
+    id: j['id'] as String,
+    type: NotificationType.values.asNameMap()[j['type']] ?? NotificationType.general,
+    title: LocalizedText.fromJson(j['title'] as Map<String, dynamic>),
+    body: LocalizedText.fromJson(j['body'] as Map<String, dynamic>),
+    createdAt: DateTime.parse(j['createdAt'] as String),
+    isRead: j['isRead'] as bool? ?? false,
+    target: j['target'] as String?,
+  );
+
   AppNotification copyWith({bool? isRead}) => AppNotification(
     id: id,
     type: type,
