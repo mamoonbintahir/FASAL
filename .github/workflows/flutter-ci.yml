@@ -97,8 +97,13 @@ jobs:
       - name: Test
         run: flutter test --reporter expanded
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build debug APK (retries flaky Android SDK/NDK downloads)
+        run: |
+          for i in 1 2 3; do
+            flutter build apk --debug && exit 0
+            echo "Build failed (attempt $i) — retrying in 15 s"; sleep 15
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v5
         with:
