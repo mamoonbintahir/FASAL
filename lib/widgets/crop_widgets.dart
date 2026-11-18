@@ -136,7 +136,7 @@ class CropListCard extends StatelessWidget {
                     backgroundColor: AppColors.surfaceMuted,
                     color: AppColors.primary,
                     semanticsLabel: s.progress,
-                    semanticsValue: s.percentComplete((p.fraction * 100).round()),
+                    semanticsValue: '${(p.fraction * 100).round()}',
                   ),
                 ),
                 const SizedBox(height: 4),
