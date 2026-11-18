@@ -98,10 +98,12 @@ class _AdviceScreenState extends ConsumerState<AdviceScreen> {
                               const Gap(8),
                               Text(a.body.of(lang), style: t.bodyLarge),
                               const Gap(10),
-                              Row(
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   ListenButton(id: 'advice_${a.id}', text: LocalizedText.joinAll([a.title, a.body])),
-                                  const Spacer(),
                                   if (a.important)
                                     StatusBadge(s.importance(Importance.high), color: AppColors.warning, filled: false),
                                 ],

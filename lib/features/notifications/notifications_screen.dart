@@ -36,10 +36,10 @@ class NotificationsScreen extends ConsumerWidget {
               backTooltip: s.back,
               actions: [
                 if (hasUnread)
-                  TextButton(
+                  HeaderIconButton(
+                    icon: Icons.done_all_rounded,
+                    tooltip: s.markAllRead,
                     onPressed: () => ref.read(notificationsProvider.notifier).markAllRead(),
-                    style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-                    child: Text(s.markAllRead),
                   ),
               ],
             ),

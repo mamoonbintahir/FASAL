@@ -24,6 +24,7 @@ void main() {
 
         // Detail screens within the Home tab
         final router = GoRouter.of(tester.element(find.byKey(const Key('nav_0'))));
+        final failures = <String>[];
         for (final path in [
           'crop/c1',
           'calendar/c1',
@@ -43,10 +44,14 @@ void main() {
         ]) {
           router.push<void>('/home/$path');
           await settle(tester);
-          expect(tester.takeException(), isNull, reason: path);
+          final error = tester.takeException();
+          if (error != null) {
+            failures.add('$path → ${error is FlutterError ? error.toStringDeep() : error}');
+          }
           router.pop();
           await settle(tester);
         }
+        expect(failures, isEmpty, reason: failures.join('\n\n'));
       });
     }
   }

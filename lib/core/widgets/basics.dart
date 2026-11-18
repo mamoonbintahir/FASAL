@@ -137,16 +137,20 @@ class SectionTitle extends StatelessWidget {
         children: [
           Expanded(child: Text(title, style: t.titleLarge)),
           if (actionLabel != null && onAction != null)
-            TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                minimumSize: const Size(48, 44),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              child: Text(
-                '$actionLabel ${dir == TextDirection.rtl ? '←' : '→'}',
-                style: t.labelMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+            Flexible(
+              child: TextButton(
+                onPressed: onAction,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  minimumSize: const Size(48, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: Text(
+                  '$actionLabel ${dir == TextDirection.rtl ? '←' : '→'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: t.labelMedium?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
         ],

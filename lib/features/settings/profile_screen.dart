@@ -195,7 +195,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         child: CircularProgressIndicator(strokeWidth: 2),
                                       ),
                                       const SizedBox(width: 10),
-                                      Text(s.detectingLocation, style: t.titleSmall?.copyWith(color: AppColors.info)),
+                                      Flexible(
+                                        child: Text(
+                                          s.detectingLocation,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: t.titleSmall?.copyWith(color: AppColors.info),
+                                        ),
+                                      ),
                                     ],
                                   )
                                 : Row(
@@ -203,7 +210,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     children: [
                                       const EmojiIcon('📍', size: 18),
                                       const SizedBox(width: 6),
-                                      Text(s.useMyLocation, style: t.titleSmall?.copyWith(color: AppColors.info)),
+                                      Flexible(
+                                        child: Text(
+                                          s.useMyLocation,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: t.titleSmall?.copyWith(color: AppColors.info),
+                                        ),
+                                      ),
                                     ],
                                   ),
                           ),
