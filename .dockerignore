@@ -1,0 +1,9 @@
+build/
+.dart_tool/
+**/.dart_tool/
+android/
+ios/
+assets/
+lib/
+test/
+.git/
