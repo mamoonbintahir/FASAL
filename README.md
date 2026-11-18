@@ -247,14 +247,14 @@ Full endpoint list: [`docs/api.md`](docs/api.md).
 - `server/test/mongo_test.dart`: the same main flow against a real MongoDB (CI service container).
   CI also compiles the server, smoke-tests it over HTTP and builds the Docker image.
 
-### Latest results (CI on Flutter 3.50.0 stable)
+### Latest results (CI: Flutter 3.50.0 / Dart 3.14 stable)
 
-- `flutter analyze` — **no issues**
-- `flutter test` — **28 tests, all passing** (unit + widget + render tests in EN/UR at two screen sizes)
-- `flutter build apk --debug` — **builds**; APK attached to each CI run as `fasal-debug-apk`
-- Screenshots of 22 screens are rendered on every push to `main` and published to the
-  [`ci-screenshots`](https://github.com/mamoonbintahir/FASAL/tree/ci-screenshots) branch
-  (emoji appear monochrome there; phones show the colour system emoji).
+| Job | Result |
+|---|---|
+| Flutter app | `flutter analyze` no issues · **32 tests pass** · debug APK builds (artifact `fasal-debug-apk`) |
+| `fasal_core` | format + `dart analyze --fatal-infos` clean · **7 tests pass** |
+| Server | `dart analyze --fatal-infos` clean · **18 tests pass** (incl. real MongoDB) · compiled binary smoke-tested over HTTP · Docker image builds |
+| Screenshots | 22 screens rendered to the [`ci-screenshots`](https://github.com/mamoonbintahir/FASAL/tree/ci-screenshots) branch (emoji monochrome there; phones show colour emoji) |
 
 ## User flow
 
