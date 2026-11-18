@@ -78,7 +78,7 @@ Future<FakeTts> pumpFasal(
     ProviderScope(
       retry: (_, _) => null,
       overrides: [sharedPreferencesProvider.overrideWithValue(sp), ttsEngineProvider.overrideWithValue(tts)],
-      child: const FasalApp(),
+      child: const RepaintBoundary(key: Key('screen'), child: FasalApp()),
     ),
   );
   // Splash waits 1.4 s; mock repositories add ~350 ms latency.

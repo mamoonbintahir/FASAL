@@ -48,3 +48,7 @@ app.*.map.json
 .env
 .env.*
 !.env.example
+
+# Generated screenshots (published to the ci-screenshots branch by CI)
+test/screenshots/goldens/
+test/screenshots/failures/

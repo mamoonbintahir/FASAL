@@ -46,3 +46,38 @@ jobs:
           name: fasal-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
+
+  screenshots:
+    # Renders key screens with real fonts + emoji and publishes them to the
+    # `ci-screenshots` branch for visual review.
+    if: github.event_name != 'pull_request'
+    needs: analyze-test-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Download emoji font
+        run: curl -sSL -o /tmp/NotoColorEmoji.ttf https://raw.githubusercontent.com/googlefonts/noto-emoji/main/fonts/NotoColorEmoji.ttf
+      - name: Render screenshots
+        env:
+          FASAL_SCREENSHOTS: '1'
+          EMOJI_FONT: /tmp/NotoColorEmoji.ttf
+        run: flutter test --update-goldens test/screenshots
+      - name: Publish to ci-screenshots branch
+        run: |
+          mkdir -p /tmp/shots && cp test/screenshots/goldens/*.png /tmp/shots/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan ci-screenshots
+          git rm -rfq .
+          cp /tmp/shots/*.png .
+          git add ./*.png
+          git commit -qm "Screenshots for ${GITHUB_SHA::7}"
+          git push -f origin ci-screenshots

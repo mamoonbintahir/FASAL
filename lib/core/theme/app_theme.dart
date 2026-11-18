@@ -26,7 +26,9 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: urdu ? AppTypography.urduFamily : AppTypography.latinFamily,
-      fontFamilyFallback: urdu ? const [AppTypography.latinFamily] : const [AppTypography.urduFamily],
+      fontFamilyFallback: urdu
+          ? const [AppTypography.latinFamily, AppTypography.emojiFamily]
+          : const [AppTypography.urduFamily, AppTypography.emojiFamily],
       textTheme: AppTypography.textTheme(urdu: urdu),
       splashFactory: InkRipple.splashFactory,
       dividerColor: AppColors.divider,

@@ -8,6 +8,9 @@ abstract final class AppTypography {
   static const String latinFamily = 'Manrope';
   static const String urduFamily = 'NotoNastaliqUrdu';
 
+  /// Colour-emoji font used for emoji icons (Android ships it as a system font).
+  static const String emojiFamily = 'NotoColorEmoji';
+
   static bool _isBold(FontWeight w) =>
       w == FontWeight.w600 || w == FontWeight.w700 || w == FontWeight.w800 || w == FontWeight.w900;
 
