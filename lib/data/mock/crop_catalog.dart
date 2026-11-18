@@ -1,0 +1,853 @@
+// SAMPLE crop reference data for the Phase 1 demo.
+//
+// Stage lengths and activity days are simplified, indicative values for a
+// typical Punjab season. They are NOT expert-validated and contain no
+// fertilizer or pesticide doses. In Phase 2 this data comes from the backend
+// after review by agricultural experts.
+
+import '../models/crop_definition.dart';
+import '../models/farm_task.dart';
+import '../models/localized_text.dart';
+
+typedef _L = LocalizedText;
+
+const _wheat = CropDefinition(
+  id: 'wheat',
+  emoji: '🌾',
+  name: _L('Wheat', 'گندم'),
+  durationDays: 150,
+  varieties: ['Akbar-2019', 'Dilkash-2020', 'Faisalabad-2008', 'Galaxy-2013', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Germination', 'اگاؤ'),
+      startDay: 0,
+      endDay: 20,
+      summary: _L(
+        'Seeds are sprouting. Keep the field free of standing water.',
+        'بیج اُگ رہے ہیں۔ کھیت میں پانی کھڑا نہ ہونے دیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Tillering', 'شاخیں نکلنا'),
+      startDay: 21,
+      endDay: 45,
+      summary: _L(
+        'Plants are making new shoots. Water, first fertilizer and weed control matter most now.',
+        'پودے نئی شاخیں بنا رہے ہیں۔ ابھی پانی، پہلی کھاد اور جڑی بوٹیوں کی تلفی سب سے اہم ہے۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Jointing', 'گانٹھ بننا'),
+      startDay: 46,
+      endDay: 75,
+      summary: _L(
+        'Stems grow tall. Do not let the crop face water stress.',
+        'تنے لمبے ہو رہے ہیں۔ فصل کو پانی کی کمی نہ ہونے دیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Heading', 'سٹے نکلنا'),
+      startDay: 76,
+      endDay: 100,
+      summary: _L(
+        'Ears are coming out. Watch for aphids and rust.',
+        'سٹے نکل رہے ہیں۔ سست تیلے اور کنگی پر نظر رکھیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Grain filling', 'دانہ بننا'),
+      startDay: 101,
+      endDay: 130,
+      summary: _L(
+        'Grains are filling. Light irrigation helps; avoid watering in strong wind.',
+        'دانے بھر رہے ہیں۔ ہلکا پانی فائدہ دیتا ہے؛ تیز ہوا میں پانی نہ دیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Maturity', 'پکائی'),
+      startDay: 131,
+      endDay: 150,
+      summary: _L('Crop is turning golden. Prepare for harvest.', 'فصل سنہری ہو رہی ہے۔ کٹائی کی تیاری کریں۔'),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid heavy irrigation that leaves water standing.', 'زیادہ پانی نہ دیں کہ کھیت میں کھڑا رہے۔'),
+    _L('Do not delay the first irrigation and first fertilizer.', 'پہلا پانی اور پہلی کھاد دیر سے نہ دیں۔'),
+    _L('Avoid water stress — do not skip irrigation without rain.', 'بارش کے بغیر پانی کا ناغہ نہ کریں۔'),
+    _L('Avoid spraying without checking pest numbers first.', 'کیڑوں کی تعداد دیکھے بغیر اسپرے نہ کریں۔'),
+    _L(
+      'Avoid irrigating when strong wind is expected — plants may fall.',
+      'تیز ہوا کی پیشگوئی ہو تو پانی نہ دیں — فصل گر سکتی ہے۔',
+    ),
+    _L('Avoid late harvest — grains may shatter.', 'کٹائی میں دیر نہ کریں — دانے جھڑ سکتے ہیں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'seed',
+      day: -2,
+      type: TaskType.seedPrep,
+      title: _L('Prepare and treat seed', 'بیج تیار کریں اور زہر لگائیں'),
+      description: _L(
+        'Use clean seed. Ask your agriculture office which seed treatment to use.',
+        'صاف بیج استعمال کریں۔ بیج کو کون سی دوا لگانی ہے، محکمہ زراعت سے پوچھیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Sowing', 'بوائی'),
+      description: _L('Sow in moist soil (wattar) in straight lines.', 'وتر زمین میں سیدھی قطاروں میں بوائی کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr1',
+      day: 21,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('First irrigation', 'پہلا پانی'),
+      description: _L(
+        'First watering helps roots grow. Check soil moisture before watering.',
+        'پہلا پانی جڑوں کو مضبوط کرتا ہے۔ پانی سے پہلے زمین کی نمی دیکھیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 23,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('First fertilizer top-dressing', 'پہلی کھاد کا چھٹا'),
+      description: _L(
+        'Apply with or just before irrigation. Use quantity from your extension office or bag label.',
+        'پانی کے ساتھ یا اس سے پہلے ڈالیں۔ مقدار محکمہ زراعت یا بوری پر لکھی ہدایت سے لیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 30,
+      type: TaskType.weeding,
+      title: _L('First weed check', 'جڑی بوٹیوں کا پہلا معائنہ'),
+      description: _L('Walk the field and note weeds while they are small.', 'کھیت میں چل کر چھوٹی جڑی بوٹیاں دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'irrcheck',
+      day: 38,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Check irrigation', 'آبپاشی چیک کریں'),
+      description: _L(
+        'Skip watering if rain is coming in the next 2–3 days.',
+        'اگر 2–3 دن میں بارش متوقع ہو تو پانی نہ دیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'aphid1',
+      day: 38,
+      type: TaskType.pestMonitoring,
+      title: _L('Monitor crop for aphids', 'سست تیلے کی نگرانی کریں'),
+      description: _L('Look under leaves in 5 spots across the field.', 'کھیت کی 5 جگہوں پر پتوں کے نیچے دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed2',
+      day: 38,
+      type: TaskType.weeding,
+      title: _L('Remove weeds', 'جڑی بوٹیاں نکالیں'),
+      description: _L(
+        'Best done before rain, while weeds are small.',
+        'بارش سے پہلے، جب جڑی بوٹیاں چھوٹی ہوں، بہتر ہے۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'fert2',
+      day: 44,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('Second fertilizer activity', 'دوسری کھاد'),
+      description: _L(
+        'Apply after the rain, with the next irrigation. Follow label or extension office for quantity.',
+        'بارش کے بعد اگلے پانی کے ساتھ ڈالیں۔ مقدار کے لیے لیبل یا محکمہ زراعت کی ہدایت پر عمل کریں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'irr2',
+      day: 50,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Irrigation at jointing', 'گانٹھ بننے پر پانی'),
+      description: _L('An important watering. Check the forecast first.', 'یہ اہم پانی ہے۔ پہلے موسم دیکھ لیں۔'),
+    ),
+    TaskTemplate(
+      id: 'rust',
+      day: 62,
+      type: TaskType.inspection,
+      title: _L('Check leaves for yellow rust', 'پتوں پر پیلی کنگی دیکھیں'),
+      description: _L(
+        'Look for yellow powder stripes on leaves, especially after rain or fog.',
+        'پتوں پر پیلے سفوف کی دھاریاں دیکھیں، خاص طور پر بارش یا دھند کے بعد۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'irr3',
+      day: 80,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Irrigation at heading', 'سٹے نکلنے پر پانی'),
+      description: _L(
+        'Water stress now reduces grain. Avoid watering in strong wind.',
+        'ابھی پانی کی کمی دانہ کم کرتی ہے۔ تیز ہوا میں پانی نہ دیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'aphid2',
+      day: 86,
+      type: TaskType.pestMonitoring,
+      title: _L('Check ears for aphids', 'سٹوں پر سست تیلہ دیکھیں'),
+      description: _L(
+        'If many plants are affected, contact an agriculture officer before spraying.',
+        'اگر بہت سے پودے متاثر ہوں تو اسپرے سے پہلے زراعت افسر سے رابطہ کریں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'irr4',
+      day: 105,
+      type: TaskType.irrigation,
+      title: _L('Light irrigation for grain filling', 'دانہ بننے کے لیے ہلکا پانی'),
+      description: _L(
+        'Give light water only if soil is dry and no rain is expected.',
+        'صرف خشک زمین ہو اور بارش متوقع نہ ہو تو ہلکا پانی دیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'grain',
+      day: 122,
+      type: TaskType.inspection,
+      title: _L('Check grain hardness', 'دانے کی سختی چیک کریں'),
+      description: _L(
+        'Press a grain with your nail. Hard grain means harvest is near.',
+        'ناخن سے دانہ دبائیں۔ سخت دانہ مطلب کٹائی قریب ہے۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'hprep',
+      day: 132,
+      type: TaskType.harvestPrep,
+      title: _L('Prepare for harvest', 'کٹائی کی تیاری'),
+      description: _L(
+        'Book harvester or labour, and clean your storage.',
+        'ہارویسٹر یا مزدور کا انتظام کریں اور گودام صاف کریں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'harvest',
+      day: 142,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('Harvest', 'کٹائی'),
+      description: _L(
+        'Harvest on dry days. Avoid harvesting right after rain.',
+        'خشک دنوں میں کٹائی کریں۔ بارش کے فوراً بعد کٹائی نہ کریں۔',
+      ),
+    ),
+  ],
+);
+
+const _rice = CropDefinition(
+  id: 'rice',
+  emoji: '🍚',
+  name: _L('Rice', 'چاول'),
+  durationDays: 125,
+  varieties: ['Super Basmati', 'Basmati-515', 'Kissan Basmati', 'IRRI-6', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Seedling', 'پنیری'),
+      startDay: 0,
+      endDay: 25,
+      summary: _L('Young plants are settling after transplanting.', 'منتقلی کے بعد پودے جم رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Tillering', 'شاخیں نکلنا'),
+      startDay: 26,
+      endDay: 55,
+      summary: _L('Keep shallow water and control weeds.', 'کم گہرا پانی رکھیں اور جڑی بوٹیوں کو قابو کریں۔'),
+    ),
+    CropStageDef(
+      name: _L('Panicle start', 'بالی بننا'),
+      startDay: 56,
+      endDay: 75,
+      summary: _L('Panicles begin forming inside the stem.', 'تنے کے اندر بالی بن رہی ہے۔'),
+    ),
+    CropStageDef(
+      name: _L('Flowering', 'پھول آنا'),
+      startDay: 76,
+      endDay: 90,
+      summary: _L('Do not let the field dry out now.', 'ابھی کھیت کو خشک نہ ہونے دیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Grain filling', 'دانہ بننا'),
+      startDay: 91,
+      endDay: 110,
+      summary: _L('Grains are filling.', 'دانے بھر رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Maturity', 'پکائی'),
+      startDay: 111,
+      endDay: 125,
+      summary: _L('Drain the field before harvest.', 'کٹائی سے پہلے کھیت سے پانی نکال دیں۔'),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid deep water over young seedlings.', 'چھوٹے پودوں پر گہرا پانی نہ رکھیں۔'),
+    _L('Avoid letting weeds compete with the crop.', 'جڑی بوٹیوں کو بڑھنے نہ دیں۔'),
+    _L('Avoid water shortage.', 'پانی کی کمی نہ ہونے دیں۔'),
+    _L('Avoid drying the field during flowering.', 'پھول کے دوران کھیت خشک نہ کریں۔'),
+    _L('Avoid spraying without advice.', 'مشورے کے بغیر اسپرے نہ کریں۔'),
+    _L('Avoid harvesting wet grain.', 'گیلا دانہ نہ کاٹیں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Transplant seedlings', 'پنیری کی منتقلی'),
+      description: _L('Transplant healthy seedlings in lines.', 'صحت مند پنیری قطاروں میں لگائیں۔'),
+    ),
+    TaskTemplate(
+      id: 'water1',
+      day: 3,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Keep shallow water', 'کم گہرا پانی رکھیں'),
+      description: _L('Keep a thin layer of water while plants settle.', 'پودوں کے جمنے تک پانی کی پتلی تہہ رکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 20,
+      type: TaskType.weeding,
+      title: _L('Weed control', 'جڑی بوٹیوں کی تلفی'),
+      description: _L(
+        'Remove weeds by hand or as advised locally.',
+        'ہاتھ سے یا مقامی مشورے کے مطابق جڑی بوٹیاں نکالیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 25,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('First fertilizer', 'پہلی کھاد'),
+      description: _L(
+        'Follow your extension office or bag label for quantity.',
+        'مقدار کے لیے محکمہ زراعت یا بوری کی ہدایت پر عمل کریں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'borer',
+      day: 40,
+      type: TaskType.pestMonitoring,
+      title: _L('Check for stem borer', 'تنے کی سنڈی دیکھیں'),
+      description: _L('Look for dead centre shoots.', 'درمیان سے سوکھی شاخیں دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'fert2',
+      day: 50,
+      type: TaskType.fertilizer,
+      title: _L('Second fertilizer', 'دوسری کھاد'),
+      description: _L('Apply as advised by your extension office.', 'محکمہ زراعت کے مشورے کے مطابق ڈالیں۔'),
+    ),
+    TaskTemplate(
+      id: 'water2',
+      day: 78,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Keep water during flowering', 'پھول کے دوران پانی رکھیں'),
+      description: _L('The field must not dry out now.', 'ابھی کھیت خشک نہیں ہونا چاہیے۔'),
+    ),
+    TaskTemplate(
+      id: 'drain',
+      day: 110,
+      type: TaskType.harvestPrep,
+      title: _L('Drain the field', 'کھیت سے پانی نکالیں'),
+      description: _L(
+        'Stop irrigation about two weeks before harvest.',
+        'کٹائی سے تقریباً دو ہفتے پہلے پانی بند کریں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'harvest',
+      day: 120,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('Harvest', 'کٹائی'),
+      description: _L('Harvest when most grains are golden.', 'جب زیادہ دانے سنہری ہوں تو کٹائی کریں۔'),
+    ),
+  ],
+);
+
+const _cotton = CropDefinition(
+  id: 'cotton',
+  emoji: '☁️',
+  name: _L('Cotton', 'کپاس'),
+  durationDays: 170,
+  varieties: ['FH-142', 'IUB-13', 'CIM-663', 'MNH-1026', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Seedling', 'اگاؤ'),
+      startDay: 0,
+      endDay: 30,
+      summary: _L('Young plants are establishing.', 'چھوٹے پودے جم رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Vegetative', 'بڑھوتری'),
+      startDay: 31,
+      endDay: 60,
+      summary: _L('Plants grow leaves and branches.', 'پودے پتے اور شاخیں بنا رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Squaring', 'ڈوڈی بننا'),
+      startDay: 61,
+      endDay: 80,
+      summary: _L(
+        'Flower buds appear. Watch for sucking pests.',
+        'پھول کی کلیاں نکل رہی ہیں۔ رس چوسنے والے کیڑوں پر نظر رکھیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Flowering', 'پھول آنا'),
+      startDay: 81,
+      endDay: 110,
+      summary: _L('Regular water and pest scouting are key.', 'باقاعدہ پانی اور کیڑوں کا معائنہ ضروری ہے۔'),
+    ),
+    CropStageDef(
+      name: _L('Boll formation', 'ٹینڈے بننا'),
+      startDay: 111,
+      endDay: 140,
+      summary: _L('Bolls are growing. Watch for bollworms.', 'ٹینڈے بڑھ رہے ہیں۔ سنڈیوں پر نظر رکھیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Boll opening', 'ٹینڈے کھلنا'),
+      startDay: 141,
+      endDay: 170,
+      summary: _L('Pick open cotton on dry days.', 'خشک دنوں میں کھلی کپاس چنیں۔'),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid waterlogging.', 'پانی کھڑا نہ ہونے دیں۔'),
+    _L(
+      'Avoid early unnecessary sprays — they kill helpful insects.',
+      'بلاوجہ ابتدائی اسپرے نہ کریں — یہ دوست کیڑوں کو مارتے ہیں۔',
+    ),
+    _L('Avoid water stress at squaring.', 'ڈوڈی بننے پر پانی کی کمی نہ ہونے دیں۔'),
+    _L('Avoid spraying in the heat of the day.', 'دوپہر کی گرمی میں اسپرے نہ کریں۔'),
+    _L('Avoid heavy irrigation late in the season.', 'موسم کے آخر میں زیادہ پانی نہ دیں۔'),
+    _L('Avoid picking wet cotton.', 'گیلی کپاس نہ چنیں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Sowing', 'بوائی'),
+      description: _L('Sow on ridges or beds.', 'پٹڑیوں یا کھیلیوں پر بوائی کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'thin',
+      day: 20,
+      type: TaskType.inspection,
+      title: _L('Thin the plants', 'پودوں کی چھدرائی'),
+      description: _L('Keep healthy plants at even distance.', 'صحت مند پودے برابر فاصلے پر رکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr1',
+      day: 30,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('First irrigation', 'پہلا پانی'),
+      description: _L('Water lightly; avoid standing water.', 'ہلکا پانی دیں؛ پانی کھڑا نہ ہو۔'),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 35,
+      type: TaskType.fertilizer,
+      title: _L('Fertilizer application', 'کھاد ڈالیں'),
+      description: _L('Quantity from extension office or bag label.', 'مقدار محکمہ زراعت یا بوری کی ہدایت سے۔'),
+    ),
+    TaskTemplate(
+      id: 'scout1',
+      day: 45,
+      type: TaskType.pestMonitoring,
+      importance: Importance.high,
+      title: _L('Scout for whitefly & jassid', 'سفید مکھی اور سبز تیلہ دیکھیں'),
+      description: _L('Check under leaves twice a week.', 'ہفتے میں دو بار پتوں کے نیچے دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 40,
+      type: TaskType.weeding,
+      title: _L('Weed control', 'جڑی بوٹیوں کی تلفی'),
+      description: _L('Hoe between rows.', 'قطاروں کے درمیان گوڈی کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr2',
+      day: 70,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Irrigation at squaring', 'ڈوڈی پر پانی'),
+      description: _L('Do not let plants wilt.', 'پودوں کو مرجھانے نہ دیں۔'),
+    ),
+    TaskTemplate(
+      id: 'pbw',
+      day: 95,
+      type: TaskType.pestMonitoring,
+      importance: Importance.high,
+      title: _L('Check for pink bollworm', 'گلابی سنڈی دیکھیں'),
+      description: _L('Open a few flowers and green bolls.', 'چند پھول اور سبز ٹینڈے کھول کر دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'pick1',
+      day: 145,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('First picking', 'پہلی چنائی'),
+      description: _L('Pick dry, fully open cotton.', 'خشک اور پوری کھلی کپاس چنیں۔'),
+    ),
+  ],
+);
+
+const _maize = CropDefinition(
+  id: 'maize',
+  emoji: '🌽',
+  name: _L('Maize', 'مکئی'),
+  durationDays: 110,
+  varieties: ['Hybrid (local)', 'Pak Afgoi', 'Agaiti-2002', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Emergence', 'اگاؤ'),
+      startDay: 0,
+      endDay: 15,
+      summary: _L('Seedlings are coming up.', 'پودے نکل رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Vegetative', 'بڑھوتری'),
+      startDay: 16,
+      endDay: 45,
+      summary: _L(
+        'Fast growth. Weed control and fertilizer matter.',
+        'تیز بڑھوتری۔ جڑی بوٹیوں کی تلفی اور کھاد اہم ہیں۔',
+      ),
+    ),
+    CropStageDef(
+      name: _L('Tasseling', 'دُمبی نکلنا'),
+      startDay: 46,
+      endDay: 60,
+      summary: _L('Tassels appear. Water is critical.', 'دُمبی نکل رہی ہے۔ پانی بہت اہم ہے۔'),
+    ),
+    CropStageDef(
+      name: _L('Silking', 'بال نکلنا'),
+      startDay: 61,
+      endDay: 70,
+      summary: _L('Pollination time — avoid any water stress.', 'زیرگی کا وقت — پانی کی کمی نہ ہو۔'),
+    ),
+    CropStageDef(
+      name: _L('Grain filling', 'دانہ بننا'),
+      startDay: 71,
+      endDay: 95,
+      summary: _L('Cobs are filling.', 'چھلیاں بھر رہی ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Maturity', 'پکائی'),
+      startDay: 96,
+      endDay: 110,
+      summary: _L('Husks turn dry. Prepare for harvest.', 'چھلکے سوکھ رہے ہیں۔ کٹائی کی تیاری کریں۔'),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid waterlogging after sowing.', 'بوائی کے بعد پانی کھڑا نہ ہونے دیں۔'),
+    _L('Avoid letting weeds grow tall.', 'جڑی بوٹیوں کو بڑا نہ ہونے دیں۔'),
+    _L('Avoid water stress at tasseling.', 'دُمبی پر پانی کی کمی نہ ہو۔'),
+    _L('Avoid skipping irrigation at silking.', 'بال نکلتے وقت پانی کا ناغہ نہ کریں۔'),
+    _L('Avoid damage to cobs.', 'چھلیوں کو نقصان سے بچائیں۔'),
+    _L('Avoid storing wet grain.', 'گیلا دانہ ذخیرہ نہ کریں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Sowing', 'بوائی'),
+      description: _L('Sow on ridges in lines.', 'پٹڑیوں پر قطاروں میں بوائی کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr1',
+      day: 12,
+      type: TaskType.irrigation,
+      title: _L('First irrigation', 'پہلا پانی'),
+      description: _L('Water lightly.', 'ہلکا پانی دیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 20,
+      type: TaskType.weeding,
+      title: _L('Weed control', 'جڑی بوٹیوں کی تلفی'),
+      description: _L('Remove weeds early.', 'جڑی بوٹیاں جلد نکالیں۔'),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 25,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('Fertilizer application', 'کھاد ڈالیں'),
+      description: _L('Quantity from extension office or bag label.', 'مقدار محکمہ زراعت یا بوری کی ہدایت سے۔'),
+    ),
+    TaskTemplate(
+      id: 'faw',
+      day: 30,
+      type: TaskType.pestMonitoring,
+      importance: Importance.high,
+      title: _L('Check for fall armyworm', 'لشکری سنڈی دیکھیں'),
+      description: _L(
+        'Look for holes and sawdust-like waste in the whorl.',
+        'گوبھ میں سوراخ اور برادہ نما فضلہ دیکھیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'irr2',
+      day: 50,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Irrigation at tasseling', 'دُمبی پر پانی'),
+      description: _L('Critical watering.', 'اہم پانی۔'),
+    ),
+    TaskTemplate(
+      id: 'irr3',
+      day: 63,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Irrigation at silking', 'بال نکلنے پر پانی'),
+      description: _L('Do not skip this watering.', 'یہ پانی نہ چھوڑیں۔'),
+    ),
+    TaskTemplate(
+      id: 'harvest',
+      day: 105,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('Harvest', 'کٹائی'),
+      description: _L('Harvest when husks are dry.', 'چھلکے خشک ہوں تو کٹائی کریں۔'),
+    ),
+  ],
+);
+
+const _sugarcane = CropDefinition(
+  id: 'sugarcane',
+  emoji: '🎋',
+  name: _L('Sugarcane', 'گنا'),
+  durationDays: 330,
+  varieties: ['CPF-249', 'HSF-240', 'SPF-234', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Germination', 'اگاؤ'),
+      startDay: 0,
+      endDay: 35,
+      summary: _L('Buds are sprouting from the sets.', 'سموں سے آنکھیں پھوٹ رہی ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Tillering', 'شاخیں نکلنا'),
+      startDay: 36,
+      endDay: 120,
+      summary: _L('New shoots form. Weeds and water matter.', 'نئی شاخیں بن رہی ہیں۔ جڑی بوٹیاں اور پانی اہم ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Grand growth', 'تیز بڑھوتری'),
+      startDay: 121,
+      endDay: 270,
+      summary: _L('Canes grow fast. Earthing up helps.', 'گنا تیزی سے بڑھ رہا ہے۔ مٹی چڑھانا فائدہ مند ہے۔'),
+    ),
+    CropStageDef(
+      name: _L('Maturity', 'پکائی'),
+      startDay: 271,
+      endDay: 330,
+      summary: _L('Sugar builds up. Reduce irrigation.', 'رس میں مٹھاس بڑھ رہی ہے۔ پانی کم کریں۔'),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid dry soil during germination.', 'اگاؤ کے دوران زمین خشک نہ ہو۔'),
+    _L('Avoid weeds in young cane.', 'چھوٹے گنے میں جڑی بوٹیاں نہ ہوں۔'),
+    _L('Avoid lodging — earth up the rows.', 'گنا گرنے سے بچائیں — مٹی چڑھائیں۔'),
+    _L('Avoid heavy irrigation before harvest.', 'کٹائی سے پہلے زیادہ پانی نہ دیں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Planting', 'کاشت'),
+      description: _L('Plant healthy sets in trenches.', 'صحت مند سمے کھائیوں میں لگائیں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr1',
+      day: 10,
+      type: TaskType.irrigation,
+      title: _L('Irrigation', 'آبپاشی'),
+      description: _L('Keep soil moist for germination.', 'اگاؤ کے لیے زمین نم رکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 40,
+      type: TaskType.weeding,
+      title: _L('Hoeing and weed control', 'گوڈی اور جڑی بوٹیوں کی تلفی'),
+      description: _L('Hoe between rows.', 'قطاروں کے درمیان گوڈی کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 60,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('Fertilizer application', 'کھاد ڈالیں'),
+      description: _L('Quantity from extension office or bag label.', 'مقدار محکمہ زراعت یا بوری کی ہدایت سے۔'),
+    ),
+    TaskTemplate(
+      id: 'borer',
+      day: 90,
+      type: TaskType.pestMonitoring,
+      title: _L('Check for borers', 'گڑووں کی سنڈی دیکھیں'),
+      description: _L('Look for dead hearts.', 'سوکھی گوبھ دیکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'earth',
+      day: 130,
+      type: TaskType.inspection,
+      importance: Importance.high,
+      title: _L('Earthing up', 'مٹی چڑھانا'),
+      description: _L('Put soil around the base to prevent lodging.', 'گنا گرنے سے بچانے کے لیے جڑوں پر مٹی چڑھائیں۔'),
+    ),
+    TaskTemplate(
+      id: 'harvest',
+      day: 320,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('Harvest', 'کٹائی'),
+      description: _L('Harvest when mill schedule is confirmed.', 'مل کا شیڈول طے ہونے پر کٹائی کریں۔'),
+    ),
+  ],
+);
+
+const _potato = CropDefinition(
+  id: 'potato',
+  emoji: '🥔',
+  name: _L('Potato', 'آلو'),
+  durationDays: 100,
+  varieties: ['Cardinal', 'Asterix', 'Sante', 'Other'],
+  stages: [
+    CropStageDef(
+      name: _L('Sprouting', 'اگاؤ'),
+      startDay: 0,
+      endDay: 20,
+      summary: _L('Sprouts are emerging.', 'کونپلیں نکل رہی ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Vegetative', 'بڑھوتری'),
+      startDay: 21,
+      endDay: 40,
+      summary: _L('Leaves and stems grow.', 'پتے اور تنے بڑھ رہے ہیں۔'),
+    ),
+    CropStageDef(
+      name: _L('Tuber start', 'آلو بننا'),
+      startDay: 41,
+      endDay: 55,
+      summary: _L('Tubers begin to form. Earthing up helps.', 'آلو بننا شروع۔ مٹی چڑھانا فائدہ مند ہے۔'),
+    ),
+    CropStageDef(
+      name: _L('Bulking', 'آلو موٹا ہونا'),
+      startDay: 56,
+      endDay: 85,
+      summary: _L('Tubers grow in size. Regular water needed.', 'آلو بڑے ہو رہے ہیں۔ باقاعدہ پانی ضروری۔'),
+    ),
+    CropStageDef(
+      name: _L('Maturity', 'پکائی'),
+      startDay: 86,
+      endDay: 100,
+      summary: _L(
+        'Leaves yellow. Stop irrigation before digging.',
+        'پتے پیلے ہو رہے ہیں۔ کھدائی سے پہلے پانی بند کریں۔',
+      ),
+    ),
+  ],
+  avoidNow: [
+    _L('Avoid waterlogging — seed may rot.', 'پانی کھڑا نہ ہو — بیج گل سکتا ہے۔'),
+    _L('Avoid weeds near young plants.', 'چھوٹے پودوں کے پاس جڑی بوٹیاں نہ ہوں۔'),
+    _L('Avoid exposed tubers — earth up.', 'آلو کو کھلا نہ چھوڑیں — مٹی چڑھائیں۔'),
+    _L('Avoid irregular watering — tubers crack.', 'بے قاعدہ پانی نہ دیں — آلو پھٹ جاتے ہیں۔'),
+    _L('Avoid digging in wet soil.', 'گیلی زمین میں کھدائی نہ کریں۔'),
+  ],
+  templates: [
+    TaskTemplate(
+      id: 'sow',
+      day: 0,
+      type: TaskType.sowing,
+      importance: Importance.high,
+      title: _L('Planting', 'کاشت'),
+      description: _L('Plant healthy seed tubers on ridges.', 'صحت مند بیج آلو پٹڑیوں پر لگائیں۔'),
+    ),
+    TaskTemplate(
+      id: 'irr1',
+      day: 8,
+      type: TaskType.irrigation,
+      title: _L('Light irrigation', 'ہلکا پانی'),
+      description: _L('Water lightly; avoid flooding ridges.', 'ہلکا پانی دیں؛ پٹڑیاں نہ ڈوبیں۔'),
+    ),
+    TaskTemplate(
+      id: 'weed1',
+      day: 25,
+      type: TaskType.weeding,
+      title: _L('Weed control', 'جڑی بوٹیوں کی تلفی'),
+      description: _L('Remove weeds by hand.', 'ہاتھ سے جڑی بوٹیاں نکالیں۔'),
+    ),
+    TaskTemplate(
+      id: 'fert1',
+      day: 30,
+      type: TaskType.fertilizer,
+      importance: Importance.high,
+      title: _L('Fertilizer and earthing up', 'کھاد اور مٹی چڑھانا'),
+      description: _L('Quantity from extension office or bag label.', 'مقدار محکمہ زراعت یا بوری کی ہدایت سے۔'),
+    ),
+    TaskTemplate(
+      id: 'blight',
+      day: 45,
+      type: TaskType.pestMonitoring,
+      importance: Importance.high,
+      title: _L('Check for late blight', 'پچھیتا جھلساؤ دیکھیں'),
+      description: _L(
+        'Look for dark wet patches on leaves after fog or rain.',
+        'دھند یا بارش کے بعد پتوں پر گہرے گیلے دھبے دیکھیں۔',
+      ),
+    ),
+    TaskTemplate(
+      id: 'irr2',
+      day: 60,
+      type: TaskType.irrigation,
+      importance: Importance.high,
+      title: _L('Regular irrigation', 'باقاعدہ پانی'),
+      description: _L('Keep soil evenly moist.', 'زمین کو یکساں نم رکھیں۔'),
+    ),
+    TaskTemplate(
+      id: 'stop',
+      day: 88,
+      type: TaskType.harvestPrep,
+      title: _L('Stop irrigation', 'پانی بند کریں'),
+      description: _L('Stop water about 10 days before digging.', 'کھدائی سے تقریباً 10 دن پہلے پانی بند کریں۔'),
+    ),
+    TaskTemplate(
+      id: 'harvest',
+      day: 98,
+      type: TaskType.harvest,
+      importance: Importance.high,
+      title: _L('Digging', 'کھدائی'),
+      description: _L('Dig on a dry day and keep tubers in shade.', 'خشک دن کھدائی کریں اور آلو سائے میں رکھیں۔'),
+    ),
+  ],
+);
+
+const List<CropDefinition> kCropCatalog = [_wheat, _rice, _cotton, _maize, _sugarcane, _potato];
