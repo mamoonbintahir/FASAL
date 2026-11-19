@@ -36,14 +36,10 @@ flutter pub get
 flutter run
 ```
 
-On Windows without bash: run `flutter create . --project-name fasal --org pk.fasal --platforms android,ios`,
-delete `test/widget_test.dart` if it was created, and add this inside `<queries>` in
-`android/app/src/main/AndroidManifest.xml` so voice works on Android 11+:
+On Windows (PowerShell), use the PowerShell version of the setup script instead:
 
-```xml
-<intent>
-    <action android:name="android.intent.action.TTS_SERVICE" />
-</intent>
+```powershell
+powershell -ExecutionPolicy Bypass -File tool\setup_platforms.ps1
 ```
 
 ### Run the app against the backend
